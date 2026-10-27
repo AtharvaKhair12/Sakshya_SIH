@@ -316,24 +316,29 @@ ALTER TABLE public.audit_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- 1. Institutions RLS
+DROP POLICY IF EXISTS "Institutions viewable by authenticated users" ON public.institutions;
 CREATE POLICY "Institutions viewable by authenticated users"
 ON public.institutions FOR SELECT TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Institutions manageable by admin only" ON public.institutions;
 CREATE POLICY "Institutions manageable by admin only"
 ON public.institutions FOR ALL TO authenticated
 USING (public.get_current_role() IN ('admin', 'system_admin'));
 
 -- 2. Profiles RLS
+DROP POLICY IF EXISTS "Users can view own profile or officers can view profiles" ON public.profiles;
 CREATE POLICY "Users can view own profile or officers can view profiles"
 ON public.profiles FOR SELECT TO authenticated
 USING (id = auth.uid() OR public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'auditor', 'admin', 'system_admin'));
 
+DROP POLICY IF EXISTS "Admins can manage profiles" ON public.profiles;
 CREATE POLICY "Admins can manage profiles"
 ON public.profiles FOR ALL TO authenticated
 USING (public.get_current_role() IN ('admin', 'system_admin'));
 
 -- 3. Instruments RLS
+DROP POLICY IF EXISTS "Institutions view own instruments; officers view all" ON public.instruments;
 CREATE POLICY "Institutions view own instruments; officers view all"
 ON public.instruments FOR SELECT TO authenticated
 USING (
@@ -341,6 +346,7 @@ USING (
     OR public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'auditor', 'admin', 'system_admin')
 );
 
+DROP POLICY IF EXISTS "Institutions can create instruments for themselves" ON public.instruments;
 CREATE POLICY "Institutions can create instruments for themselves"
 ON public.instruments FOR INSERT TO authenticated
 WITH CHECK (
@@ -348,11 +354,13 @@ WITH CHECK (
     AND institution_id = public.get_current_institution_id()
 );
 
+DROP POLICY IF EXISTS "Officers can update instruments status" ON public.instruments;
 CREATE POLICY "Officers can update instruments status"
 ON public.instruments FOR UPDATE TO authenticated
 USING (public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'admin', 'system_admin'));
 
 -- 4. Documents RLS
+DROP POLICY IF EXISTS "Document access matching instrument ownership" ON public.instrument_documents;
 CREATE POLICY "Document access matching instrument ownership"
 ON public.instrument_documents FOR SELECT TO authenticated
 USING (
@@ -360,6 +368,7 @@ USING (
     OR public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'auditor', 'admin', 'system_admin')
 );
 
+DROP POLICY IF EXISTS "Institutions upload documents to own instruments" ON public.instrument_documents;
 CREATE POLICY "Institutions upload documents to own instruments"
 ON public.instrument_documents FOR INSERT TO authenticated
 WITH CHECK (
@@ -368,6 +377,7 @@ WITH CHECK (
 );
 
 -- 5. Release Requests RLS
+DROP POLICY IF EXISTS "Release requests viewable by owner institution or officers" ON public.release_requests;
 CREATE POLICY "Release requests viewable by owner institution or officers"
 ON public.release_requests FOR SELECT TO authenticated
 USING (
@@ -375,6 +385,7 @@ USING (
     OR public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'auditor', 'admin', 'system_admin')
 );
 
+DROP POLICY IF EXISTS "Institution can create release request" ON public.release_requests;
 CREATE POLICY "Institution can create release request"
 ON public.release_requests FOR INSERT TO authenticated
 WITH CHECK (
@@ -382,24 +393,29 @@ WITH CHECK (
     AND institution_id = public.get_current_institution_id()
 );
 
+DROP POLICY IF EXISTS "Senior officer can authorize decision on release request" ON public.release_requests;
 CREATE POLICY "Senior officer can authorize decision on release request"
 ON public.release_requests FOR UPDATE TO authenticated
 USING (public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'admin', 'system_admin'));
 
 -- 6. Audit Events RLS (Strict Read-Only)
+DROP POLICY IF EXISTS "Audit events readable by officers, auditors and admins" ON public.audit_events;
 CREATE POLICY "Audit events readable by officers, auditors and admins"
 ON public.audit_events FOR SELECT TO authenticated
 USING (public.get_current_role() IN ('scrutiny_officer', 'senior_officer', 'auditor', 'admin', 'system_admin'));
 
+DROP POLICY IF EXISTS "System can record audit events" ON public.audit_events;
 CREATE POLICY "System can record audit events"
 ON public.audit_events FOR INSERT TO authenticated
 WITH CHECK (true);
 
 -- 7. Regulatory Rules RLS
+DROP POLICY IF EXISTS "Regulatory rules viewable by all authenticated" ON public.regulatory_rules;
 CREATE POLICY "Regulatory rules viewable by all authenticated"
 ON public.regulatory_rules FOR SELECT TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Regulatory rules manageable by admin only" ON public.regulatory_rules;
 CREATE POLICY "Regulatory rules manageable by admin only"
 ON public.regulatory_rules FOR ALL TO authenticated
 USING (public.get_current_role() IN ('admin', 'system_admin'));
@@ -421,10 +437,13 @@ ON CONFLICT (id) DO UPDATE SET
     allowed_mime_types = ARRAY['application/pdf', 'image/jpeg', 'image/png'];
 
 -- Storage RLS
+DROP POLICY IF EXISTS "Storage private access to authenticated users" ON storage.objects;
 CREATE POLICY "Storage private access to authenticated users"
 ON storage.objects FOR SELECT TO authenticated
 USING (bucket_id = 'fdr-documents');
 
+DROP POLICY IF EXISTS "Storage upload to authenticated institution and officers" ON storage.objects;
 CREATE POLICY "Storage upload to authenticated institution and officers"
 ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (bucket_id = 'fdr-documents');
+
