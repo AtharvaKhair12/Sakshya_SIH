@@ -95,6 +95,17 @@ export function getInstitution(id: string): Institution | undefined { return loa
 
 export function getUsers(): User[] { return loadStore().users; }
 export function getUser(id: string): User | undefined { return loadStore().users.find(u => u.id === id); }
+export function addUser(user: User): User {
+  const s = loadStore();
+  const existing = s.users.findIndex(u => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+  if (existing >= 0) {
+    s.users[existing] = user;
+  } else {
+    s.users.push(user);
+  }
+  saveStore(s);
+  return user;
+}
 
 export function getInstruments(
   filter?: { institutionId?: string; status?: InstrumentStatus; verificationStatus?: VerificationStatus; assignedReviewer?: string },

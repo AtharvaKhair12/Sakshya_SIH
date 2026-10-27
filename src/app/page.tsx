@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-context';
-import { DEMO_CREDENTIALS } from '@/lib/demo-data';
+import { DEMO_CREDENTIALS, DEMO_INSTITUTIONS } from '@/lib/demo-data';
 import { Role } from '@/lib/types';
 import {
   Building2, Search, FileCheck, Eye, Settings,
   Clock, History, ArrowRight, ShieldCheck,
   UploadCloud, AlertTriangle, Layers, BellRing,
-  UserCheck, CheckCircle2, Lock, Mail, EyeOff, KeyRound
+  UserCheck, CheckCircle2, Lock, Mail, EyeOff,
+  KeyRound, UserPlus, LogIn, X
 } from 'lucide-react';
 
 const ROLE_ICONS: Record<Role, React.ReactNode> = {
@@ -27,6 +28,7 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   senior_officer: 'Review escalated cases, resolve exceptions, and record authorized decisions.',
   auditor: 'Inspect verification records, decision history, and audit trails in read-only mode.',
   admin: 'Manage user accounts, configure rules, and maintain reference data.',
+  system_admin: 'Manage user accounts, configure rules, and maintain reference data.',
 };
 
 // 5 Connected Stages: Submission to Resolution
@@ -89,12 +91,27 @@ const OUTCOME_BLOCKS = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithPassword, isAuthenticated } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<Role | null>('institution');
-  const [email, setEmail] = useState('meera.sharma@vjti.ac.in');
-  const [password, setPassword] = useState('demo2025');
+  const { login, loginWithPassword, signUp, isAuthenticated } = useAuth();
+  
+  // Modal state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [activeCred, setActiveCred] = useState<typeof DEMO_CREDENTIALS[0] | null>(null);
+  const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
+  
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  
+  // Sign up form state
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [signupInstitutionId, setSignupInstitutionId] = useState(DEMO_INSTITUTIONS[0]?.id || 'inst-001');
+  const [signupError, setSignupError] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
@@ -103,32 +120,76 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
+  const handleOpenAuth = (cred: typeof DEMO_CREDENTIALS[0]) => {
+    setActiveCred(cred);
+    setLoginEmail(cred.email);
+    setLoginPassword(cred.password);
+    setSignupName('');
+    setSignupEmail('');
+    setSignupPassword('');
+    setSignupConfirmPassword('');
+    setSignupInstitutionId(DEMO_INSTITUTIONS[0]?.id || 'inst-001');
+    setLoginError(null);
+    setSignupError(null);
+    setAuthTab('login');
+    setAuthModalOpen(true);
+  };
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
     setIsLoading(true);
-    const res = await loginWithPassword(email, password);
+    const res = await loginWithPassword(loginEmail, loginPassword);
     setIsLoading(false);
     if (!res.success) {
-      setLoginError(res.error || 'Authentication failed. Please verify credentials.');
+      setLoginError(res.error || 'Authentication failed. Please check credentials.');
     } else {
+      setAuthModalOpen(false);
       router.push('/dashboard');
     }
   };
 
-  const handleSelectRoleCreds = (cred: typeof DEMO_CREDENTIALS[0]) => {
-    setSelectedRole(cred.role);
-    setEmail(cred.email);
-    setPassword(cred.password);
-    setLoginError(null);
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError(null);
+
+    if (signupPassword !== signupConfirmPassword) {
+      setSignupError('Passwords do not match. Please re-enter.');
+      return;
+    }
+    if (signupPassword.length < 6) {
+      setSignupError('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (!activeCred) return;
+
+    setIsLoading(true);
+    const res = await signUp({
+      name: signupName,
+      email: signupEmail,
+      password: signupPassword,
+      role: activeCred.role,
+      institutionId: activeCred.role === 'institution' ? signupInstitutionId : undefined,
+    });
+    setIsLoading(false);
+
+    if (!res.success) {
+      setSignupError(res.error || 'Registration failed.');
+    } else {
+      setAuthModalOpen(false);
+      router.push('/dashboard');
+    }
   };
 
-  const handleDirectRoleLogin = (cred: typeof DEMO_CREDENTIALS[0]) => {
+  const handleInstantLaunch = () => {
+    if (!activeCred) return;
     setIsLoading(true);
     setTimeout(() => {
-      login(cred.userId, cred.role, cred.role === 'institution' ? 'inst-001' : undefined);
+      login(activeCred.userId, activeCred.role, activeCred.role === 'institution' ? 'inst-001' : undefined);
+      setAuthModalOpen(false);
       router.push('/dashboard');
-    }, 300);
+    }, 250);
   };
 
   return (
@@ -198,7 +259,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Section 2: Purpose-Driven Visual Journey: A clearer path from submission to resolution */}
+        {/* Section 2: Purpose-Driven Visual Journey */}
         <section className="bg-white border rounded-2xl p-6 sm:p-8 lg:p-10 shadow-sm space-y-8"
           style={{ borderColor: 'var(--color-parchment)' }}>
           <div className="text-center max-w-2xl mx-auto space-y-1.5">
@@ -210,15 +271,13 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Desktop Connected Horizontal Timeline (>= lg) */}
+          {/* Desktop Timeline */}
           <div className="hidden lg:grid grid-cols-5 gap-4 relative pt-2">
-            {/* Connecting baseline behind nodes */}
             <div className="absolute top-8 left-8 right-8 h-0.5 -z-0"
               style={{ background: 'linear-gradient(90deg, var(--color-forest-200) 0%, var(--color-brass-300) 50%, var(--color-forest-300) 100%)' }} />
 
             {WORKFLOW_STAGES.map((stage, idx) => (
               <div key={stage.step} className="relative z-10 flex flex-col items-center text-center px-2 group">
-                {/* Node with Step Badge */}
                 <div className="w-13 h-13 rounded-2xl flex items-center justify-center bg-white border-2 shadow-xs transition-transform group-hover:scale-105 duration-200 mb-3"
                   style={{
                     borderColor: idx === 0 ? 'var(--color-forest-600)' : 'var(--color-parchment)',
@@ -243,12 +302,11 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Mobile & Tablet Vertical Connected Timeline (< lg) */}
+          {/* Mobile Timeline */}
           <div className="lg:hidden relative pl-6 border-l-2 ml-4 space-y-6"
             style={{ borderColor: 'var(--color-forest-200)' }}>
             {WORKFLOW_STAGES.map((stage) => (
               <div key={stage.step} className="relative space-y-1">
-                {/* Timeline Node Dot */}
                 <div className="absolute -left-[35px] top-0 w-8 h-8 rounded-xl flex items-center justify-center bg-white border-2 shadow-xs"
                   style={{ borderColor: 'var(--color-forest-600)', color: 'var(--color-forest-700)' }}>
                   {stage.icon}
@@ -272,7 +330,7 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* Section 3: Outcomes Section Aligned with the Problem Statement */}
+        {/* Section 3: Outcomes Section */}
         <section className="space-y-6">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
@@ -308,184 +366,324 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* Section 4: Enter Your Workspace (Password Login & Role Selectors) */}
-        <section id="workspace" className="pt-8 border-t space-y-8" style={{ borderColor: 'var(--color-parchment)' }}>
+        {/* Section 4: Clean 5-Role Cards Grid (NO static form on landing page) */}
+        <section id="workspace" className="pt-8 border-t space-y-6" style={{ borderColor: 'var(--color-parchment)' }}>
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
               style={{ background: 'var(--color-forest-50)', color: 'var(--color-forest-800)', border: '1px solid var(--color-forest-200)' }}>
               AUTHENTICATED ACCESS CONTROL (RBAC)
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-              Sign in to your authorized workspace
+              Enter your workspace
             </h2>
             <p className="text-xs sm:text-sm text-gray-600">
-              Enter your credentials for role-based access control, or choose an authorized role identity below to auto-fill credentials.
+              Click on your authorized role to sign in with your credentials or register a new verified account.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Column: Official Password-Based Sign In Form */}
-            <div className="lg:col-span-5 bg-white border rounded-2xl p-6 sm:p-7 shadow-xs space-y-5"
-              style={{ borderColor: 'var(--color-parchment)' }}>
-              <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--color-parchment)' }}>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-forest-50 text-forest-700">
-                    <Lock size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-serif font-bold text-sm text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-                      Credential Sign In
-                    </h3>
-                    <p className="text-[11px] text-gray-500">
-                      Password-verified portal access
-                    </p>
-                  </div>
-                </div>
+          {/* 5 Distinct Role Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {DEMO_CREDENTIALS.map((cred) => {
+              const description = ROLE_DESCRIPTIONS[cred.role] || cred.description;
 
-                <span className="text-[10px] font-semibold font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  Active Security
-                </span>
-              </div>
-
-              {loginError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2 animate-in fade-in">
-                  <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-red-600" />
-                  <span>{loginError}</span>
-                </div>
-              )}
-
-              <form onSubmit={handlePasswordLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
-                    <Mail size={13} className="text-forest-700" /> Official Email Address
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setLoginError(null); }}
-                    placeholder="user@vjti.ac.in or officer@aicte-demo.in"
-                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/50"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <KeyRound size={13} className="text-forest-700" /> Portal Password
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-normal">Default: demo2025</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setLoginError(null); }}
-                      placeholder="Enter password"
-                      className="w-full text-xs px-3.5 py-2.5 pr-10 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/50"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full btn-primary text-xs font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all mt-2"
+              return (
+                <div
+                  key={cred.role}
+                  onClick={() => handleOpenAuth(cred)}
+                  className="cursor-pointer text-left p-6 rounded-2xl border transition-all duration-200 flex flex-col justify-between group bg-white hover:bg-forest-50/40 hover:border-forest-400 hover:shadow-md"
+                  style={{ borderColor: 'var(--color-parchment)' }}
                 >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Authenticating...
-                    </span>
-                  ) : (
-                    <>
-                      <span>Sign In with Password</span>
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
-              </form>
-
-              <div className="pt-2 border-t text-[11px] text-gray-500 text-center" style={{ borderColor: 'var(--color-parchment)' }}>
-                Protected by PostgreSQL Row Level Security (RLS) &amp; Trusted Role Assignment.
-              </div>
-            </div>
-
-            {/* Right Column: 5 Authorized Role Cards (Auto-Fill & Quick Launch) */}
-            <div className="lg:col-span-7 space-y-3">
-              <div className="flex items-center justify-between pb-1">
-                <span className="text-xs font-semibold text-gray-700">
-                  Select a role identity to auto-fill credentials:
-                </span>
-                <span className="text-[11px] text-forest-700 font-medium">
-                  5 Authorized Roles
-                </span>
-              </div>
-
-              <div className="space-y-2.5">
-                {DEMO_CREDENTIALS.map((cred) => {
-                  const isSelected = email.toLowerCase() === cred.email.toLowerCase();
-                  const description = ROLE_DESCRIPTIONS[cred.role] || cred.description;
-
-                  return (
-                    <div
-                      key={cred.role}
-                      onClick={() => handleSelectRoleCreds(cred)}
-                      className={`cursor-pointer p-4 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-4 ${
-                        isSelected ? 'bg-forest-50/80 border-forest-500 shadow-xs' : 'bg-white hover:bg-gray-50/80 border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isSelected ? 'bg-forest-100 text-forest-800' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {ROLE_ICONS[cred.role]}
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-serif font-bold text-xs sm:text-sm text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-                              {cred.label}
-                            </span>
-                            <span className="font-mono text-[10px] text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200 truncate">
-                              {cred.email}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-gray-500 truncate mt-0.5">
-                            {description}
-                          </p>
-                        </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors bg-forest-50 text-forest-700 group-hover:bg-forest-100 group-hover:text-forest-800">
+                        {ROLE_ICONS[cred.role]}
                       </div>
-
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDirectRoleLogin(cred);
-                          }}
-                          title="Instant Launch"
-                          className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border bg-white hover:bg-forest-700 hover:text-white hover:border-forest-700 text-forest-800 border-forest-300 transition-colors flex items-center gap-1 shadow-2xs"
-                        >
-                          Launch <ArrowRight size={12} />
-                        </button>
-                      </div>
+                      <span className="text-[10px] font-semibold uppercase px-2.5 py-1 rounded-full tracking-wider bg-gray-100 text-gray-600 group-hover:bg-forest-100 group-hover:text-forest-800 transition-colors">
+                        Authorized Role
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+
+                    <div>
+                      <div className="font-serif font-bold text-lg text-gray-900 group-hover:text-forest-800 transition-colors"
+                        style={{ fontFamily: 'var(--font-serif)' }}>
+                        {cred.label}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                        {description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <span className="font-mono text-[10px] text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-100 inline-block">
+                        {cred.email}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t flex items-center justify-between text-xs font-semibold text-forest-700"
+                    style={{ borderColor: 'var(--color-parchment)' }}>
+                    <span>Sign In or Register</span>
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>
+
+      {/* Role-Specific Sign In / Sign Up Modal */}
+      {authModalOpen && activeCred && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setAuthModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl border shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-150"
+            style={{ borderColor: 'var(--color-parchment)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b bg-gray-50/60 flex items-center justify-between" style={{ borderColor: 'var(--color-parchment)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-forest-50 text-forest-700 flex items-center justify-center">
+                  {ROLE_ICONS[activeCred.role]}
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+                    {activeCred.label}
+                  </h3>
+                  <p className="text-[11px] text-gray-500">
+                    Role-Based Access Control (RBAC)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(false)}
+                className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Tabs: Log In vs Sign Up */}
+            <div className="flex border-b text-xs font-semibold" style={{ borderColor: 'var(--color-parchment)' }}>
+              <button
+                type="button"
+                onClick={() => { setAuthTab('login'); setLoginError(null); setSignupError(null); }}
+                className={`flex-1 py-3 text-center border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+                  authTab === 'login'
+                    ? 'border-forest-700 text-forest-800 bg-white'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50/50'
+                }`}
+              >
+                <LogIn size={14} />
+                <span>Log In</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setAuthTab('signup'); setLoginError(null); setSignupError(null); }}
+                className={`flex-1 py-3 text-center border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+                  authTab === 'signup'
+                    ? 'border-forest-700 text-forest-800 bg-white'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50/50'
+                }`}
+              >
+                <UserPlus size={14} />
+                <span>Sign Up / Register</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* TAB 1: LOG IN */}
+              {authTab === 'login' && (
+                <form onSubmit={handlePasswordLogin} className="space-y-4">
+                  {loginError && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+                      <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-red-600" />
+                      <span>{loginError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      <Mail size={13} className="text-forest-700" /> Official Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => { setLoginEmail(e.target.value); setLoginError(null); }}
+                      placeholder="e.g. officer@aicte.gov.in"
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <KeyRound size={13} className="text-forest-700" /> Password
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-normal">Default: demo2025</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={loginPassword}
+                        onChange={(e) => { setLoginPassword(e.target.value); setLoginError(null); }}
+                        placeholder="Enter password"
+                        className="w-full text-xs px-3.5 py-2.5 pr-10 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 space-y-2">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full btn-primary text-xs font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Authenticating...
+                        </span>
+                      ) : (
+                        <>
+                          <span>Sign In as {activeCred.label}</span>
+                          <ArrowRight size={14} />
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleInstantLaunch}
+                      className="w-full text-xs font-medium py-2 px-3 text-gray-600 hover:text-forest-800 hover:bg-forest-50/50 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle2 size={13} className="text-forest-700" />
+                      <span>Instant 1-Click Launch</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* TAB 2: SIGN UP / REGISTER */}
+              {authTab === 'signup' && (
+                <form onSubmit={handleSignUpSubmit} className="space-y-3.5">
+                  {signupError && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+                      <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-red-600" />
+                      <span>{signupError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-700">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
+                      placeholder="e.g. Dr. Rajesh Kumar"
+                      className="w-full text-xs px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent bg-gray-50/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-700">Official Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      placeholder="e.g. rajesh@institute.edu.in"
+                      className="w-full text-xs px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent bg-gray-50/40"
+                    />
+                  </div>
+
+                  {activeCred.role === 'institution' && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-700">Institution (AISHE Verified)</label>
+                      <select
+                        value={signupInstitutionId}
+                        onChange={(e) => setSignupInstitutionId(e.target.value)}
+                        className="w-full text-xs px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent bg-gray-50/40"
+                      >
+                        {DEMO_INSTITUTIONS.map((inst) => (
+                          <option key={inst.id} value={inst.id}>
+                            {inst.name} ({inst.aisheCode})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-700">Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        placeholder="Min 6 chars"
+                        className="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent bg-gray-50/40"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-700">Confirm Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={signupConfirmPassword}
+                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                        placeholder="Confirm"
+                        className="w-full text-xs px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent bg-gray-50/40"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full btn-primary text-xs font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all mt-2"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creating Account...
+                      </span>
+                    ) : (
+                      <>
+                        <UserPlus size={14} />
+                        <span>Register &amp; Enter Portal</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 border-t bg-gray-50 text-[11px] text-gray-500 text-center" style={{ borderColor: 'var(--color-parchment)' }}>
+              Protected by PostgreSQL Row Level Security (RLS) &amp; Trusted Role Assignment.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer & Trust Messaging */}
       <footer className="border-t py-8 px-6 bg-white/90 text-xs mt-12" style={{ borderColor: 'var(--color-parchment)' }}>
@@ -498,34 +696,12 @@ export default function LoginPage() {
                 className="w-7 h-7 object-contain rounded-md"
               />
               <span className="font-serif font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-                Sakshya
-              </span>
-              <span className="text-gray-400">·</span>
-              <span className="text-gray-600">Evidence &amp; FDR Management Workspace</span>
-            </div>
-
-            {/* Concise Trust Statements */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-gray-600 font-medium">
-              <span className="flex items-center gap-1.5">
-                <Clock size={13} className="text-forest-700" /> Lifecycle tracking
-              </span>
-              <span className="text-gray-300">·</span>
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck size={13} className="text-forest-700" /> Evidence-linked review
-              </span>
-              <span className="text-gray-300">·</span>
-              <span className="flex items-center gap-1.5">
-                <UserCheck size={13} className="text-forest-700" /> Human-authorized decisions
-              </span>
-              <span className="text-gray-300">·</span>
-              <span className="flex items-center gap-1.5 text-forest-800">
-                <History size={13} /> Traceable audit history
+                Sakshya — AICTE Security Deposit &amp; FDR Management Workspace
               </span>
             </div>
-          </div>
-
-          <div className="pt-3 border-t text-center text-gray-500 text-[11px] leading-relaxed" style={{ borderColor: 'var(--color-parchment)' }}>
-            Sakshya — AICTE Security Deposit &amp; Fixed Deposit Receipt (FDR) Compliance Workspace.
+            <div className="text-gray-500 text-[11px]">
+              Independent Demonstration · Sourced from AICTE APH 2024–27 &amp; AISHE Directory
+            </div>
           </div>
         </div>
       </footer>

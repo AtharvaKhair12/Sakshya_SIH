@@ -25,14 +25,18 @@ export const DEMO_INSTITUTIONS: Institution[] = [
 
 // ── Users ──
 export const DEMO_USERS: User[] = [
-  { id: 'user-001', name: 'Dr. Meera Sharma', email: 'meera.sharma@vbit.edu.in', role: 'institution', institutionId: 'inst-001', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-002', name: 'Prof. Rajesh Patel', email: 'rajesh.patel@lnce.edu.in', role: 'institution', institutionId: 'inst-002', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-003', name: 'Ananya Iyer', email: 'ananya.iyer@aicte-demo.in', role: 'scrutiny_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-004', name: 'Vikram Deshmukh', email: 'vikram.deshmukh@aicte-demo.in', role: 'scrutiny_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-005', name: 'Dr. Suresh Reddy', email: 'suresh.reddy@aicte-demo.in', role: 'senior_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-006', name: 'Kavita Nair', email: 'kavita.nair@audit-demo.in', role: 'auditor', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-007', name: 'Amit Kulkarni', email: 'amit.kulkarni@admin-demo.in', role: 'admin', active: true, createdAt: '2025-06-15T10:00:00Z' },
-  { id: 'user-008', name: 'Dr. Priya Menon', email: 'priya.menon@suas.ac.in', role: 'institution', institutionId: 'inst-003', active: true, createdAt: '2025-07-01T10:00:00Z' },
+  { id: 'user-001', name: 'Dr. Meera Sharma', email: 'meera.sharma@vjti.ac.in', role: 'institution', institutionId: 'inst-001', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-002', name: 'Prof. Rajesh Patel', email: 'rajesh.patel@coep.ac.in', role: 'institution', institutionId: 'inst-002', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-003', name: 'Arun Patel', email: 'arun.patel@aicte.gov.in', role: 'scrutiny_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-004', name: 'Priya Deshmukh', email: 'priya.deshmukh@aicte.gov.in', role: 'scrutiny_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-005', name: 'Dr. Rajesh Verma', email: 'rajesh.verma@aicte.gov.in', role: 'senior_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-006', name: 'CAG Senior Auditor', email: 'cag.auditor@cag.gov.in', role: 'auditor', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-007', name: 'System Administrator', email: 'admin@aicte.gov.in', role: 'admin', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-008', name: 'Dr. Priya Menon', email: 'priya.menon@dtu.ac.in', role: 'institution', institutionId: 'inst-003', active: true, createdAt: '2025-07-01T10:00:00Z' },
+  { id: 'user-009', name: 'Ananya Iyer', email: 'ananya.iyer@aicte-demo.in', role: 'scrutiny_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-010', name: 'Dr. Suresh Reddy', email: 'suresh.reddy@aicte-demo.in', role: 'senior_officer', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-011', name: 'Kavita Nair', email: 'kavita.nair@audit-demo.in', role: 'auditor', active: true, createdAt: '2025-06-15T10:00:00Z' },
+  { id: 'user-012', name: 'Amit Kulkarni', email: 'amit.kulkarni@admin-demo.in', role: 'admin', active: true, createdAt: '2025-06-15T10:00:00Z' },
 ];
 
 const now = new Date();
@@ -516,11 +520,11 @@ export const DEMO_SOURCES: SourceAdapter[] = [
 
 // ── Demo Credentials (fictional) ──
 export const DEMO_CREDENTIALS: Array<{ role: Role; label: string; description: string; email: string; password: string; userId: string }> = [
-  { role: 'institution', label: 'Institution User', description: 'Submit FDR records, upload documents, track submissions, and manage renewal requests for your institution.', email: 'meera.sharma@vbit.edu.in', password: 'demo2025', userId: 'user-001' },
-  { role: 'scrutiny_officer', label: 'Scrutiny Officer', description: 'Review submitted instruments, verify documents, investigate discrepancies, and escalate cases.', email: 'ananya.iyer@aicte-demo.in', password: 'demo2025', userId: 'user-003' },
-  { role: 'senior_officer', label: 'Senior Officer', description: 'Access escalated cases, review findings, and make authorized decisions on release requests.', email: 'suresh.reddy@aicte-demo.in', password: 'demo2025', userId: 'user-005' },
-  { role: 'auditor', label: 'Auditor', description: 'Read-only access to records, verification history, decision trails, and audit logs.', email: 'kavita.nair@audit-demo.in', password: 'demo2025', userId: 'user-006' },
-  { role: 'admin', label: 'System Administrator', description: 'Manage users, configure rules, import reference data, and maintain system settings.', email: 'amit.kulkarni@admin-demo.in', password: 'demo2025', userId: 'user-007' },
+  { role: 'institution', label: 'Institution User', description: 'Submit FDR records, upload documents, track submissions, and manage renewal requests for your institution.', email: 'meera.sharma@vjti.ac.in', password: 'demo2025', userId: 'user-001' },
+  { role: 'scrutiny_officer', label: 'Scrutiny Officer', description: 'Review submitted instruments, verify documents, investigate discrepancies, and escalate cases.', email: 'arun.patel@aicte.gov.in', password: 'demo2025', userId: 'user-003' },
+  { role: 'senior_officer', label: 'Senior Officer', description: 'Access escalated cases, review findings, and make authorized decisions on release requests.', email: 'rajesh.verma@aicte.gov.in', password: 'demo2025', userId: 'user-005' },
+  { role: 'auditor', label: 'Auditor', description: 'Read-only access to records, verification history, decision trails, and audit logs.', email: 'cag.auditor@cag.gov.in', password: 'demo2025', userId: 'user-006' },
+  { role: 'admin', label: 'System Administrator', description: 'Manage users, configure rules, import reference data, and maintain system settings.', email: 'admin@aicte.gov.in', password: 'demo2025', userId: 'user-007' },
 ];
 
 export function generateAllDemoData() {

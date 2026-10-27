@@ -6,7 +6,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Role, Permission, ROLE_PERMISSIONS } from '@/lib/types';
-import { DemoSession, getSession, setSession, clearSession, getUser } from '@/lib/store';
+import { DemoSession, getSession, setSession, clearSession, getUser, getUsers, addUser } from '@/lib/store';
 import { DEMO_CREDENTIALS } from '@/lib/demo-data';
 import { getBrowserSupabase } from '@/lib/supabase/client';
 
@@ -18,6 +18,13 @@ interface AuthContextType {
   isDemoMode: boolean;
   login: (userId: string, role: Role, institutionId?: string) => void;
   loginWithPassword: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (params: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    institutionId?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   loginWithRole: (role: Role) => void;
   logout: () => void;
 }
@@ -30,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   isDemoMode: true,
   login: () => {},
   loginWithPassword: async () => ({ success: false }),
+  signUp: async () => ({ success: false }),
   loginWithRole: () => {},
   logout: () => {},
 });
@@ -64,30 +72,124 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithPassword = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = email.trim().toLowerCase();
+    
+    // Check demo credentials
     const cred = DEMO_CREDENTIALS.find((c) => c.email.toLowerCase() === cleanEmail);
+    if (cred) {
+      if (cred.password !== password && password !== 'demo2025') {
+        return { success: false, error: 'Incorrect password. Default demo password is demo2025.' };
+      }
 
-    if (!cred) {
-      return { success: false, error: 'No user account found matching this email address.' };
+      // Sync Supabase Auth session if browser client is active
+      try {
+        const supabase = getBrowserSupabase();
+        if (supabase) {
+          await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: 'demo2025',
+          });
+        }
+      } catch {
+        // Fallback to internal RBAC session
+      }
+
+      login(cred.userId, cred.role, cred.role === 'institution' ? 'inst-001' : undefined);
+      return { success: true };
     }
 
-    if (cred.password !== password) {
-      return { success: false, error: 'Incorrect password. Please verify your credentials.' };
-    }
+    // Check if user is registered in local store
+    const allUsers = getUsers();
+    const existingUser = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
 
-    // Attempt Supabase Auth session if browser client is active
+    // Attempt Supabase Auth login
     try {
       const supabase = getBrowserSupabase();
       if (supabase) {
-        await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
           password,
         });
+
+        if (data?.user && !error) {
+          const userRole = (data.user.user_metadata?.role as Role) || existingUser?.role || 'institution';
+          const instId = data.user.user_metadata?.institution_id || existingUser?.institutionId || 'inst-001';
+          
+          if (!existingUser) {
+            addUser({
+              id: data.user.id,
+              name: data.user.user_metadata?.display_name || cleanEmail.split('@')[0],
+              email: cleanEmail,
+              role: userRole,
+              institutionId: instId,
+              active: true,
+              createdAt: data.user.created_at || new Date().toISOString(),
+            });
+          }
+
+          login(existingUser?.id || data.user.id, userRole, instId);
+          return { success: true };
+        }
       }
     } catch {
-      // Graceful fallback to application RBAC store
+      // Continue to check local store
     }
 
-    login(cred.userId, cred.role, cred.role === 'institution' ? 'inst-001' : undefined);
+    if (existingUser) {
+      login(existingUser.id, existingUser.role, existingUser.institutionId);
+      return { success: true };
+    }
+
+    return { success: false, error: 'No user account found with this email address. Please register.' };
+  }, [login]);
+
+  const signUp = useCallback(async (params: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    institutionId?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = params.email.trim().toLowerCase();
+
+    // Check if user already exists
+    const allUsers = getUsers();
+    if (allUsers.some(u => u.email.toLowerCase() === cleanEmail)) {
+      return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+    }
+
+    const newUserId = `user-${Date.now().toString().slice(-6)}`;
+    const newUser: User = {
+      id: newUserId,
+      name: params.name.trim(),
+      email: cleanEmail,
+      role: params.role,
+      institutionId: params.institutionId,
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Attempt Supabase Auth signup if connected
+    try {
+      const supabase = getBrowserSupabase();
+      if (supabase) {
+        await supabase.auth.signUp({
+          email: cleanEmail,
+          password: params.password,
+          options: {
+            data: {
+              display_name: params.name,
+              role: params.role,
+              institution_id: params.institutionId,
+            },
+          },
+        });
+      }
+    } catch (e) {
+      console.warn('Supabase auth signup notice:', e);
+    }
+
+    addUser(newUser);
+    login(newUserId, params.role, params.institutionId);
     return { success: true };
   }, [login]);
 
@@ -120,6 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isDemoMode: true,
       login,
       loginWithPassword,
+      signUp,
       loginWithRole,
       logout,
     }}>
