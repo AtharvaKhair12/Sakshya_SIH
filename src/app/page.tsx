@@ -7,8 +7,9 @@ import { DEMO_CREDENTIALS } from '@/lib/demo-data';
 import { Role } from '@/lib/types';
 import {
   Building2, Search, FileCheck, Eye, Settings,
-  Calendar, CheckCircle2, Clock, Lock, FileText,
-  History, ArrowRight, ShieldCheck, AlertCircle
+  Clock, Lock, History, ArrowRight, ShieldCheck,
+  UploadCloud, AlertTriangle, Layers, BellRing,
+  UserCheck, CheckCircle2, ChevronRight
 } from 'lucide-react';
 
 const ROLE_ICONS: Record<Role, React.ReactNode> = {
@@ -28,6 +29,64 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   admin: 'Manage prototype users, configure rules, and maintain reference data.',
   system_admin: 'Manage prototype users, configure rules, and maintain reference data.',
 };
+
+// 5 Connected Stages: Submission to Resolution
+const WORKFLOW_STAGES = [
+  {
+    step: '01',
+    title: 'Stage 1 — Secure Submission',
+    description: 'Institutions submit security deposit/FDR information and the required supporting documents through a structured workflow.',
+    icon: <UploadCloud size={20} />,
+  },
+  {
+    step: '02',
+    title: 'Stage 2 — Evidence-led Validation',
+    description: 'The system checks document completeness, compares available records, and flags inconsistencies that require further review.',
+    icon: <ShieldCheck size={20} />,
+  },
+  {
+    step: '03',
+    title: 'Stage 3 — Maturity & Renewal',
+    description: 'Upcoming maturity dates, outstanding renewals, replacement instruments, and pending follow-ups remain visible to authorized users.',
+    icon: <Clock size={20} />,
+  },
+  {
+    step: '04',
+    title: 'Stage 4 — Controlled Review & Release',
+    description: 'Scrutiny officers investigate cases, senior officers record authorized decisions, and release requests follow the applicable review process.',
+    icon: <UserCheck size={20} />,
+  },
+  {
+    step: '05',
+    title: 'Stage 5 — Traceable Outcomes',
+    description: 'The system maintains an accessible history of submissions, verification outcomes, officer observations, and administrative actions.',
+    icon: <History size={20} />,
+  },
+];
+
+// 4 Intended Outcome Feature Blocks
+const OUTCOME_BLOCKS = [
+  {
+    title: 'Centralized Records',
+    description: 'Bring institution-wise FDR records, documents, and lifecycle status together in one workspace.',
+    icon: <Layers size={22} className="text-forest-700" />,
+  },
+  {
+    title: 'Earlier Discrepancy Detection',
+    description: 'Help identify missing information, duplicated identifiers, inconsistent dates, and records requiring manual confirmation.',
+    icon: <AlertTriangle size={22} className="text-forest-700" />,
+  },
+  {
+    title: 'Proactive Follow-up',
+    description: 'Improve visibility into upcoming maturities, overdue actions, renewal requirements, and pending requests.',
+    icon: <BellRing size={22} className="text-forest-700" />,
+  },
+  {
+    title: 'Accountable Decisions',
+    description: 'Support evidence-linked scrutiny, role-specific permissions, controlled decision workflows, and traceable administrative history.',
+    icon: <ShieldCheck size={22} className="text-forest-700" />,
+  },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -96,175 +155,156 @@ export default function LoginPage() {
             SECURITY DEPOSIT &amp; FDR MANAGEMENT
           </span>
           <a href="#workspace"
-            className="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors hover:bg-gray-50 flex items-center gap-1"
+            className="text-xs font-medium px-3.5 py-1.5 rounded-lg border transition-colors hover:bg-gray-50 flex items-center gap-1.5"
             style={{ borderColor: 'var(--color-parchment)', color: 'var(--color-charcoal)' }}>
             Demo Access <ArrowRight size={13} />
           </a>
         </div>
       </header>
 
-      {/* Main Hero & Illustration Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 space-y-12">
-        {/* Two-Column Hero Composition */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column: Brand & Messaging */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wider uppercase"
-              style={{ background: 'var(--color-forest-50)', color: 'var(--color-forest-800)', border: '1px solid var(--color-forest-200)' }}>
-              <ShieldCheck size={13} />
-              AICTE-RELATED APPROVAL WORKFLOWS
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-gray-900 leading-[1.18]"
-              style={{ fontFamily: 'var(--font-serif)', color: 'var(--color-charcoal)' }}>
-              Every deposit tracked.<br />
-              <span style={{ color: 'var(--color-forest-700)' }}>Every action traceable.</span>
-            </h1>
-
-            <p className="text-sm sm:text-base leading-relaxed text-gray-600 max-w-2xl">
-              Sakshya brings institution-wise security deposit and FDR records, document checks, maturity reminders, renewal tracking, and release requests into one evidence-led workspace. It helps institutions and authorized reviewers manage financial instruments systematically and follow up on outstanding actions.
-            </p>
-
-            {/* Core Pillars */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-3.5 rounded-xl border bg-white shadow-xs space-y-1" style={{ borderColor: 'var(--color-parchment)' }}>
-                <div className="text-forest-700 font-semibold text-xs flex items-center gap-1.5">
-                  <Clock size={15} /> Lifecycle Tracking
-                </div>
-                <p className="text-[11px] text-gray-500 leading-normal">
-                  End-to-end monitoring from submission to maturity and discharge.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border bg-white shadow-xs space-y-1" style={{ borderColor: 'var(--color-parchment)' }}>
-                <div className="text-forest-700 font-semibold text-xs flex items-center gap-1.5">
-                  <FileText size={15} /> Evidence-Linked Review
-                </div>
-                <p className="text-[11px] text-gray-500 leading-normal">
-                  Side-by-side certificate verification against AISHE and handbook rules.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl border bg-white shadow-xs space-y-1" style={{ borderColor: 'var(--color-parchment)' }}>
-                <div className="text-forest-700 font-semibold text-xs flex items-center gap-1.5">
-                  <History size={15} /> Human-Authorized Decisions
-                </div>
-                <p className="text-[11px] text-gray-500 leading-normal">
-                  Traceable audit history with mandatory officer orders and rationales.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <a href="#workspace"
-                className="btn-primary text-xs font-semibold py-2.5 px-5 rounded-lg flex items-center gap-2 shadow-sm">
-                Explore Demo Roles <ArrowRight size={15} />
-              </a>
-              <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                <CheckCircle2 size={14} className="text-emerald-600" />
-                Pre-configured sandbox with 5 distinct role workspaces
-              </span>
-            </div>
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 space-y-16">
+        {/* Section 1: Hero Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-[11px] font-semibold tracking-wider uppercase"
+            style={{ background: 'var(--color-forest-50)', color: 'var(--color-forest-800)', border: '1px solid var(--color-forest-200)' }}>
+            <ShieldCheck size={13} />
+            AICTE-RELATED APPROVAL WORKFLOWS
           </div>
 
-          {/* Right Column: Refined Paper-Based FDR / Document Illustration */}
-          <div className="lg:col-span-5 relative">
-            {/* Background decorative glow */}
-            <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-forest-100 to-amber-100/50 opacity-60 blur-lg -z-10" />
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-gray-900 leading-[1.18]"
+            style={{ fontFamily: 'var(--font-serif)', color: 'var(--color-charcoal)' }}>
+            Every deposit tracked.<br />
+            <span style={{ color: 'var(--color-forest-700)' }}>Every action traceable.</span>
+          </h1>
 
-            {/* Main FDR Record Card */}
-            <div className="bg-white rounded-2xl border p-5 sm:p-6 shadow-md space-y-4 relative"
-              style={{ borderColor: 'var(--color-parchment)' }}>
+          <p className="text-sm sm:text-base leading-relaxed text-gray-600 max-w-2xl mx-auto">
+            Sakshya brings institution-wise security deposit and FDR records, document checks, maturity reminders, renewal tracking, and release requests into one evidence-led workspace. It helps institutions and authorized reviewers manage financial instruments systematically and follow up on outstanding actions.
+          </p>
 
-              {/* Document Header */}
-              <div className="flex items-start justify-between border-b pb-3.5" style={{ borderColor: 'var(--color-parchment)' }}>
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
-                    Official Instrument Record
-                  </div>
-                  <h3 className="text-sm font-serif font-bold text-gray-900 mt-0.5" style={{ fontFamily: 'var(--font-serif)' }}>
-                    SECURITY DEPOSIT / FDR RECORD
-                  </h3>
-                </div>
-                <span className="font-mono text-[11px] px-2 py-0.5 rounded font-bold bg-forest-50 text-forest-700 border border-forest-200">
-                  FDR-2025-0001
-                </span>
-              </div>
-
-              {/* Document Metadata Grid */}
-              <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50/70 p-3 rounded-xl border border-gray-100">
-                <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide">Institution reference</div>
-                  <div className="font-semibold text-gray-900 mt-0.5 truncate">Vidya Bharati Inst. of Tech</div>
-                  <div className="text-[10px] font-mono text-gray-500">AISHE: C-12345</div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide">Receipt number</div>
-                  <div className="font-semibold text-gray-900 mt-0.5 font-mono truncate">SBI-882194019</div>
-                  <div className="text-[10px] text-gray-500">State Bank of India</div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide">Issue date</div>
-                  <div className="font-medium text-gray-800 mt-0.5 flex items-center gap-1">
-                    <Calendar size={12} className="text-gray-400" /> 15 Jan 2024
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wide">Maturity date</div>
-                  <div className="font-medium text-gray-800 mt-0.5 flex items-center gap-1">
-                    <Calendar size={12} className="text-forest-600" /> 15 Jan 2034 (10 Yrs)
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Status Panel: Maturity & Renewal */}
-              <div className="p-3 rounded-xl text-xs space-y-1.5"
-                style={{ background: 'var(--color-brass-50)', border: '1px solid var(--color-brass-200)' }}>
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-brass-800 flex items-center gap-1.5 text-xs">
-                    <AlertCircle size={14} className="text-amber-700" />
-                    Maturity approaching
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800">
-                    T-30 Days Notice
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-700 leading-normal">
-                  Renewal follow-up required: Institutional FDR Horizon alert triggered for regulatory review.
-                </p>
-              </div>
-
-              {/* Verification Panel: Record Comparison */}
-              <div className="border rounded-xl p-3 bg-white space-y-2 text-xs" style={{ borderColor: 'var(--color-parchment)' }}>
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-gray-800 text-xs">
-                    Record comparison &amp; Supporting evidence review
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-emerald-100 text-emerald-800">
-                    Reference match
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5 border-t border-gray-100">
-                  <span>Joint Holder: AICTE / Regional Director</span>
-                  <span className="text-emerald-700 font-medium">Clear Title Confirmed</span>
-                </div>
-              </div>
-
-              {/* Audit Decree Label */}
-              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
-                <span className="flex items-center gap-1 text-forest-700 font-medium">
-                  <ShieldCheck size={13} /> Administrative action recorded
-                </span>
-                <span className="font-mono text-[10px] text-gray-400">Order #DEC-8812</span>
-              </div>
-            </div>
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <a href="#workspace"
+              className="btn-primary text-xs font-semibold py-2.5 px-5 rounded-lg flex items-center gap-2 shadow-sm">
+              Explore Demo Roles <ArrowRight size={15} />
+            </a>
+            <span className="text-xs text-gray-500 flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-600" />
+              Pre-configured sandbox with 5 distinct role workspaces
+            </span>
           </div>
         </div>
 
-        {/* Section 2: Enter Your Workspace (Role Login Panel) */}
+        {/* Section 2: Purpose-Driven Visual Journey: A clearer path from submission to resolution */}
+        <section className="bg-white border rounded-2xl p-6 sm:p-8 lg:p-10 shadow-sm space-y-8"
+          style={{ borderColor: 'var(--color-parchment)' }}>
+          <div className="text-center max-w-2xl mx-auto space-y-1.5">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+              A clearer path from submission to resolution
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500">
+              A structured, evidence-led workflow guiding security deposits and FDR instruments through every administrative stage.
+            </p>
+          </div>
+
+          {/* Desktop Connected Horizontal Timeline (>= lg) */}
+          <div className="hidden lg:grid grid-cols-5 gap-4 relative pt-2">
+            {/* Connecting baseline behind nodes */}
+            <div className="absolute top-8 left-8 right-8 h-0.5 -z-0"
+              style={{ background: 'linear-gradient(90deg, var(--color-forest-200) 0%, var(--color-brass-300) 50%, var(--color-forest-300) 100%)' }} />
+
+            {WORKFLOW_STAGES.map((stage, idx) => (
+              <div key={stage.step} className="relative z-10 flex flex-col items-center text-center px-2 group">
+                {/* Node with Step Badge */}
+                <div className="w-13 h-13 rounded-2xl flex items-center justify-center bg-white border-2 shadow-xs transition-transform group-hover:scale-105 duration-200 mb-3"
+                  style={{
+                    borderColor: idx === 0 ? 'var(--color-forest-600)' : 'var(--color-parchment)',
+                    color: 'var(--color-forest-700)',
+                  }}>
+                  {stage.icon}
+                </div>
+
+                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5"
+                  style={{ background: 'var(--color-forest-50)', color: 'var(--color-forest-800)' }}>
+                  {stage.step}
+                </span>
+
+                <h3 className="font-serif font-bold text-xs text-gray-900 mt-1 mb-1.5" style={{ fontFamily: 'var(--font-serif)' }}>
+                  {stage.title}
+                </h3>
+
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  {stage.description}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile & Tablet Vertical Connected Timeline (< lg) */}
+          <div className="lg:hidden relative pl-6 border-l-2 ml-4 space-y-6"
+            style={{ borderColor: 'var(--color-forest-200)' }}>
+            {WORKFLOW_STAGES.map((stage) => (
+              <div key={stage.step} className="relative space-y-1">
+                {/* Timeline Node Dot */}
+                <div className="absolute -left-[35px] top-0 w-8 h-8 rounded-xl flex items-center justify-center bg-white border-2 shadow-xs"
+                  style={{ borderColor: 'var(--color-forest-600)', color: 'var(--color-forest-700)' }}>
+                  {stage.icon}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: 'var(--color-forest-50)', color: 'var(--color-forest-800)' }}>
+                    {stage.step}
+                  </span>
+                  <h3 className="font-serif font-bold text-xs text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+                    {stage.title}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-gray-600 leading-relaxed pt-0.5">
+                  {stage.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Section 3: Outcomes Section Aligned with the Problem Statement */}
+        <section className="space-y-6">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
+              style={{ background: 'var(--color-brass-50)', color: 'var(--color-charcoal)', border: '1px solid var(--color-brass-200)' }}>
+              ALIGNED WITH AICTE-RELATED APPROVAL WORKFLOWS
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+              What Sakshya is designed to improve
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Key operational objectives designed to address security deposit management challenges systematically.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {OUTCOME_BLOCKS.map((block, i) => (
+              <div key={i} className="bg-white border rounded-2xl p-5 shadow-xs space-y-2.5 flex flex-col justify-between"
+                style={{ borderColor: 'var(--color-parchment)' }}>
+                <div className="space-y-2">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ background: 'var(--color-forest-50)', border: '1px solid var(--color-forest-200)' }}>
+                    {block.icon}
+                  </div>
+                  <h3 className="font-serif font-bold text-sm text-gray-900 pt-1" style={{ fontFamily: 'var(--font-serif)' }}>
+                    {block.title}
+                  </h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {block.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Section 4: Enter Your Workspace (Role Login Panel) */}
         <section id="workspace" className="pt-8 border-t space-y-6" style={{ borderColor: 'var(--color-parchment)' }}>
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
@@ -335,7 +375,7 @@ export default function LoginPage() {
               );
             })}
 
-            {/* Optional Manual Sign In Toggle Card */}
+            {/* Manual Sign In Toggle Card */}
             <div className="p-5 rounded-2xl border bg-white/70 flex flex-col justify-between space-y-4"
               style={{ borderColor: 'var(--color-parchment)' }}>
               <div>
@@ -435,15 +475,15 @@ export default function LoginPage() {
               </span>
               <span className="text-gray-300">·</span>
               <span className="flex items-center gap-1.5">
-                <FileText size={13} className="text-forest-700" /> Evidence-linked review
+                <ShieldCheck size={13} className="text-forest-700" /> Evidence-linked review
               </span>
               <span className="text-gray-300">·</span>
               <span className="flex items-center gap-1.5">
-                <History size={13} className="text-forest-700" /> Human-authorized decisions
+                <UserCheck size={13} className="text-forest-700" /> Human-authorized decisions
               </span>
               <span className="text-gray-300">·</span>
               <span className="flex items-center gap-1.5 text-forest-800">
-                <ShieldCheck size={13} /> Traceable audit history
+                <History size={13} /> Traceable audit history
               </span>
             </div>
           </div>
