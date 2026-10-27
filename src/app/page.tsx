@@ -9,7 +9,7 @@ import {
   Building2, Search, FileCheck, Eye, Settings,
   Clock, History, ArrowRight, ShieldCheck,
   UploadCloud, AlertTriangle, Layers, BellRing,
-  UserCheck, CheckCircle2
+  UserCheck, CheckCircle2, Lock, Mail, EyeOff, KeyRound
 } from 'lucide-react';
 
 const ROLE_ICONS: Record<Role, React.ReactNode> = {
@@ -27,7 +27,6 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   senior_officer: 'Review escalated cases, resolve exceptions, and record authorized decisions.',
   auditor: 'Inspect verification records, decision history, and audit trails in read-only mode.',
   admin: 'Manage user accounts, configure rules, and maintain reference data.',
-  system_admin: 'Manage user accounts, configure rules, and maintain reference data.',
 };
 
 // 5 Connected Stages: Submission to Resolution
@@ -90,8 +89,12 @@ const OUTCOME_BLOCKS = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const { login, loginWithPassword, isAuthenticated } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<Role | null>('institution');
+  const [email, setEmail] = useState('meera.sharma@vjti.ac.in');
+  const [password, setPassword] = useState('demo2025');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
@@ -100,12 +103,32 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleRoleLogin = (cred: typeof DEMO_CREDENTIALS[0]) => {
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setIsLoading(true);
+    const res = await loginWithPassword(email, password);
+    setIsLoading(false);
+    if (!res.success) {
+      setLoginError(res.error || 'Authentication failed. Please verify credentials.');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  const handleSelectRoleCreds = (cred: typeof DEMO_CREDENTIALS[0]) => {
+    setSelectedRole(cred.role);
+    setEmail(cred.email);
+    setPassword(cred.password);
+    setLoginError(null);
+  };
+
+  const handleDirectRoleLogin = (cred: typeof DEMO_CREDENTIALS[0]) => {
     setIsLoading(true);
     setTimeout(() => {
       login(cred.userId, cred.role, cred.role === 'institution' ? 'inst-001' : undefined);
       router.push('/dashboard');
-    }, 350);
+    }, 300);
   };
 
   return (
@@ -285,76 +308,181 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* Section 4: Enter Your Workspace (Role Selection Cards) */}
-        <section id="workspace" className="pt-8 border-t space-y-6" style={{ borderColor: 'var(--color-parchment)' }}>
+        {/* Section 4: Enter Your Workspace (Password Login & Role Selectors) */}
+        <section id="workspace" className="pt-8 border-t space-y-8" style={{ borderColor: 'var(--color-parchment)' }}>
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
               style={{ background: 'var(--color-forest-50)', color: 'var(--color-forest-800)', border: '1px solid var(--color-forest-200)' }}>
-              FDR &amp; SECURITY DEPOSIT WORKSPACE
+              AUTHENTICATED ACCESS CONTROL (RBAC)
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-              Enter your workspace
+              Sign in to your authorized workspace
             </h2>
             <p className="text-xs sm:text-sm text-gray-600">
-              Select your role to manage FDR records, review submissions, monitor deadlines, or inspect audit history.
+              Enter your credentials for role-based access control, or choose an authorized role identity below to auto-fill credentials.
             </p>
           </div>
 
-          {/* 5 Distinct Role Cards (Balanced 5-Role Layout) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {DEMO_CREDENTIALS.map((cred) => {
-              const isSelected = selectedRole === cred.role;
-              const description = ROLE_DESCRIPTIONS[cred.role] || cred.description;
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Official Password-Based Sign In Form */}
+            <div className="lg:col-span-5 bg-white border rounded-2xl p-6 sm:p-7 shadow-xs space-y-5"
+              style={{ borderColor: 'var(--color-parchment)' }}>
+              <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--color-parchment)' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-forest-50 text-forest-700">
+                    <Lock size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-sm text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+                      Credential Sign In
+                    </h3>
+                    <p className="text-[11px] text-gray-500">
+                      Password-verified portal access
+                    </p>
+                  </div>
+                </div>
 
-              return (
+                <span className="text-[10px] font-semibold font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Active Security
+                </span>
+              </div>
+
+              {loginError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2 animate-in fade-in">
+                  <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-red-600" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                    <Mail size={13} className="text-forest-700" /> Official Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setLoginError(null); }}
+                    placeholder="user@vjti.ac.in or officer@aicte-demo.in"
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <KeyRound size={13} className="text-forest-700" /> Portal Password
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-normal">Default: demo2025</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setLoginError(null); }}
+                      placeholder="Enter password"
+                      className="w-full text-xs px-3.5 py-2.5 pr-10 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
                 <button
-                  key={cred.role}
-                  onClick={() => handleRoleLogin(cred)}
+                  type="submit"
                   disabled={isLoading}
-                  onMouseEnter={() => setSelectedRole(cred.role)}
-                  onMouseLeave={() => setSelectedRole(null)}
-                  className={`text-left p-5 rounded-2xl border transition-all duration-150 flex flex-col justify-between group ${
-                    isSelected ? 'shadow-md scale-[1.01]' : 'hover:shadow-sm'
-                  }`}
-                  style={{
-                    background: isSelected ? 'var(--color-forest-50)' : 'white',
-                    borderColor: isSelected ? 'var(--color-forest-400)' : 'var(--color-parchment)',
-                  }}
+                  className="w-full btn-primary text-xs font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all mt-2"
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
-                        style={{
-                          background: isSelected ? 'var(--color-forest-100)' : 'var(--color-ivory)',
-                          color: isSelected ? 'var(--color-forest-800)' : 'var(--color-forest-700)',
-                        }}>
-                        {ROLE_ICONS[cred.role]}
-                      </div>
-                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded tracking-wider"
-                        style={{ background: 'var(--color-ivory)', color: 'var(--color-charcoal-muted)' }}>
-                        Secure Access
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="font-serif font-bold text-base text-gray-900 group-hover:text-forest-800 transition-colors"
-                        style={{ fontFamily: 'var(--font-serif)' }}>
-                        {cred.label}
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1.5 leading-relaxed">
-                        {description}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 mt-3 border-t flex items-center justify-between text-xs font-semibold text-forest-700"
-                    style={{ borderColor: isSelected ? 'rgba(45,80,57,0.15)' : 'var(--color-parchment)' }}>
-                    <span>Launch workspace</span>
-                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                  </div>
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Authenticating...
+                    </span>
+                  ) : (
+                    <>
+                      <span>Sign In with Password</span>
+                      <ArrowRight size={14} />
+                    </>
+                  )}
                 </button>
-              );
-            })}
+              </form>
+
+              <div className="pt-2 border-t text-[11px] text-gray-500 text-center" style={{ borderColor: 'var(--color-parchment)' }}>
+                Protected by PostgreSQL Row Level Security (RLS) &amp; Trusted Role Assignment.
+              </div>
+            </div>
+
+            {/* Right Column: 5 Authorized Role Cards (Auto-Fill & Quick Launch) */}
+            <div className="lg:col-span-7 space-y-3">
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-xs font-semibold text-gray-700">
+                  Select a role identity to auto-fill credentials:
+                </span>
+                <span className="text-[11px] text-forest-700 font-medium">
+                  5 Authorized Roles
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {DEMO_CREDENTIALS.map((cred) => {
+                  const isSelected = email.toLowerCase() === cred.email.toLowerCase();
+                  const description = ROLE_DESCRIPTIONS[cred.role] || cred.description;
+
+                  return (
+                    <div
+                      key={cred.role}
+                      onClick={() => handleSelectRoleCreds(cred)}
+                      className={`cursor-pointer p-4 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-4 ${
+                        isSelected ? 'bg-forest-50/80 border-forest-500 shadow-xs' : 'bg-white hover:bg-gray-50/80 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isSelected ? 'bg-forest-100 text-forest-800' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {ROLE_ICONS[cred.role]}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-serif font-bold text-xs sm:text-sm text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
+                              {cred.label}
+                            </span>
+                            <span className="font-mono text-[10px] text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200 truncate">
+                              {cred.email}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                            {description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDirectRoleLogin(cred);
+                          }}
+                          title="Instant Launch"
+                          className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border bg-white hover:bg-forest-700 hover:text-white hover:border-forest-700 text-forest-800 border-forest-300 transition-colors flex items-center gap-1 shadow-2xs"
+                        >
+                          Launch <ArrowRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </section>
       </main>
