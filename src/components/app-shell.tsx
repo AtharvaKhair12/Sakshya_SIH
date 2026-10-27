@@ -39,7 +39,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  if (!isAuthenticated || !user || !session) return null;
+  if (!isAuthenticated || !user || !session) {
+    return (
+      <div className="flex h-screen items-center justify-center" style={{ background: 'var(--color-ivory)' }}>
+        <div className="text-center space-y-2">
+          <div className="w-8 h-8 border-2 border-forest-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-gray-500 font-serif">Checking authorization...</p>
+        </div>
+      </div>
+    );
+  }
 
   const notifications = getNotifications(user.id);
   const unreadCount = notifications.filter(n => !n.read).length;

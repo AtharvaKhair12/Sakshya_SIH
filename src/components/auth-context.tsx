@@ -64,10 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const permissions = session ? ROLE_PERMISSIONS[session.role] : null;
 
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <AuthContext.Provider value={{
       user,
