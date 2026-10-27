@@ -207,7 +207,13 @@ function addAuditEvent(store: DemoStore, event: Omit<AuditEvent, 'id' | 'timesta
   return ae;
 }
 
-export function createInstrument(data: Omit<Instrument, 'id' | 'status' | 'verificationStatus' | 'updatedAt' | 'documents'>, session: DemoSession): Instrument {
+export function createInstrument(
+  data: Omit<Instrument, 'id' | 'status' | 'verificationStatus' | 'updatedAt' | 'documents'> & {
+    status?: InstrumentStatus;
+    verificationStatus?: VerificationStatus;
+  },
+  session: DemoSession
+): Instrument {
   if (!canPerformAction(session, 'create_instrument')) {
     throw new Error('Unauthorized: Role is not authorized to register new FDR instruments.');
   }
@@ -216,8 +222,8 @@ export function createInstrument(data: Omit<Instrument, 'id' | 'status' | 'verif
   const instrument: Instrument = {
     ...data,
     id,
-    status: 'submitted',
-    verificationStatus: 'not_started',
+    status: data.status || 'submitted',
+    verificationStatus: data.verificationStatus || 'not_started',
     updatedAt: new Date().toISOString(),
     documents: [],
   };
@@ -237,9 +243,24 @@ export function createInstrument(data: Omit<Instrument, 'id' | 'status' | 'verif
   return instrument;
 }
 
-export function updateInstrumentStatus(instrumentId: string, newStatus: InstrumentStatus, reason: string, session: DemoSession): Instrument | null {
-  if (!canPerformAction(session, 'verify_source')) {
-    return null;
+export function updateInstrumentStatus(
+  instrumentId: string,
+  newStatus: InstrumentStatus,
+  reason: string,
+  session?: DemoSession
+): Instrument | null {
+  if (
+    session &&
+    !canPerformAction(session, 'verify_source') &&
+    session.role !== 'admin' &&
+    session.role !== 'system_admin'
+  ) {
+    // Allow automated system preliminary validation check transitions upon submission
+    if (session.role === 'institution' && (newStatus === 'discrepancy_flagged' || newStatus === 'preliminary_validation')) {
+      // Allowed system automated check outcome
+    } else {
+      return null;
+    }
   }
   const store = loadStore();
   const idx = store.instruments.findIndex(i => i.id === instrumentId);
@@ -252,11 +273,11 @@ export function updateInstrumentStatus(instrumentId: string, newStatus: Instrume
   inst.updatedAt = new Date().toISOString();
   store.lifecycleEvents.push({
     id: `lc-${uuidv4().slice(0, 8)}`, instrumentId, fromStatus: oldStatus, toStatus: newStatus,
-    reason, performedBy: session.userId, performedAt: new Date().toISOString(),
+    reason, performedBy: session?.userId || 'system', performedAt: new Date().toISOString(),
   });
   addAuditEvent(store, {
-    userId: session.userId, userName: getUser(session.userId)?.name || 'Unknown',
-    userRole: session.role, entityType: 'instrument', entityId: instrumentId,
+    userId: session?.userId || 'system', userName: session ? (getUser(session.userId)?.name || 'Unknown') : 'System Rule Engine',
+    userRole: session?.role || 'admin', entityType: 'instrument', entityId: instrumentId,
     action: 'status_changed', previousValue: oldStatus, newValue: newStatus, reason,
   });
   saveStore(store);

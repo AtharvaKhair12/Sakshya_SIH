@@ -24,6 +24,13 @@ export interface User {
   createdAt: string;
 }
 
+export interface DemoSession {
+  userId: string;
+  role: Role;
+  institutionId?: string;
+  loginAt: string;
+}
+
 export interface Institution {
   id: string;
   name: string;
@@ -325,7 +332,7 @@ export interface SourceAdapter {
 // Allowed status transitions
 export const ALLOWED_TRANSITIONS: Record<InstrumentStatus, InstrumentStatus[]> = {
   draft: ['submitted'],
-  submitted: ['preliminary_validation'],
+  submitted: ['preliminary_validation', 'discrepancy_flagged', 'pending_scrutiny'],
   preliminary_validation: ['pending_scrutiny', 'discrepancy_flagged'],
   pending_scrutiny: ['verification_in_progress'],
   verification_in_progress: ['verified', 'discrepancy_flagged'],

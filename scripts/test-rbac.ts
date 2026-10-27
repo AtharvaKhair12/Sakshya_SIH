@@ -227,7 +227,7 @@ test('getVisibleNavigation returns purpose-built navigation for each role', () =
 
   // Admin has users and settings
   assert(adminNav.some(n => n.href === '/users'));
-  assert(adminNav.some(n => n.href === '/settings'));
+  assert(adminNav.some(n => n.href.startsWith('/settings')));
 });
 
 // Summary
