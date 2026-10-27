@@ -5,25 +5,42 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth-context';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/store';
-import { ROLE_LABELS, Role } from '@/lib/types';
+import { ROLE_LABELS } from '@/lib/types';
 import {
-  LayoutDashboard, FileText, Plus, Send, ShieldCheck, Calendar, ArrowRightLeft,
+  getVisibleNavigation, canAccessRoute, normalizeRole, NavigationLink,
+} from '@/lib/permissions';
+import {
+  LayoutDashboard, FileText, PlusCircle, Send, ShieldCheck, Calendar, ArrowRightLeft,
   BarChart3, History, Users, Settings, LogOut, Bell, Search, Menu, X,
-  ChevronRight, ChevronDown, Building2,
+  ChevronRight, ShieldAlert, AlertTriangle, CheckCircle, Sliders, Database, Upload,
 } from 'lucide-react';
 
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-  roles?: Role[];
-  badge?: number;
+function getNavIcon(iconName: string) {
+  switch (iconName) {
+    case 'LayoutDashboard': return <LayoutDashboard size={20} />;
+    case 'FileText': return <FileText size={20} />;
+    case 'PlusCircle': return <PlusCircle size={20} />;
+    case 'Send': return <Send size={20} />;
+    case 'ShieldCheck': return <ShieldCheck size={20} />;
+    case 'Calendar': return <Calendar size={20} />;
+    case 'ArrowRightLeft': return <ArrowRightLeft size={20} />;
+    case 'BarChart3': return <BarChart3 size={20} />;
+    case 'History': return <History size={20} />;
+    case 'Users': return <Users size={20} />;
+    case 'Settings': return <Settings size={20} />;
+    case 'AlertTriangle': return <AlertTriangle size={20} />;
+    case 'CheckCircle': return <CheckCircle size={20} />;
+    case 'Sliders': return <Sliders size={20} />;
+    case 'Database': return <Database size={20} />;
+    case 'Upload': return <Upload size={20} />;
+    default: return <FileText size={20} />;
+  }
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, session, permissions, isAuthenticated, logout } = useAuth();
+  const { user, session, isAuthenticated, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -53,23 +70,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const notifications = getNotifications(user.id);
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const navItems: NavItem[] = [
-    { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={20} /> },
-    { label: 'Instruments', href: '/instruments', icon: <FileText size={20} /> },
-    { label: 'New Submission', href: '/instruments/new', icon: <Plus size={20} />, roles: ['institution'] },
-    { label: 'Submissions', href: '/submissions', icon: <Send size={20} />, roles: ['institution'] },
-    { label: 'Verification', href: '/verification', icon: <ShieldCheck size={20} />, roles: ['scrutiny_officer', 'senior_officer'] },
-    { label: 'Maturity', href: '/maturity', icon: <Calendar size={20} /> },
-    { label: 'Release Requests', href: '/release-requests', icon: <ArrowRightLeft size={20} /> },
-    { label: 'Reports', href: '/reports', icon: <BarChart3 size={20} />, roles: ['scrutiny_officer', 'senior_officer', 'auditor', 'admin'] },
-    { label: 'Audit Log', href: '/audit', icon: <History size={20} />, roles: ['scrutiny_officer', 'senior_officer', 'auditor', 'admin'] },
-    { label: 'Users', href: '/users', icon: <Users size={20} />, roles: ['admin'] },
-    { label: 'Settings', href: '/settings', icon: <Settings size={20} />, roles: ['admin'] },
-  ];
+  const navLinks: NavigationLink[] = getVisibleNavigation(session);
+  const isRoutePermitted = canAccessRoute(session, pathname);
 
-  const filteredNav = navItems.filter(item => !item.roles || item.roles.includes(session.role));
-
-  const pageTitle = filteredNav.find(item => pathname.startsWith(item.href))?.label || 'Sakshya';
+  const activeLink = navLinks.find(item => {
+    if (item.href === '/dashboard') return pathname === '/dashboard';
+    const baseUrl = item.href.split('?')[0];
+    return pathname.startsWith(baseUrl);
+  });
+  const pageTitle = activeLink?.label || 'Sakshya';
 
   const breadcrumbs = pathname.split('/').filter(Boolean).map((segment, i, arr) => ({
     label: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '),
@@ -116,18 +125,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {filteredNav.map(item => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+          {navLinks.map(item => {
+            const baseUrl = item.href.split('?')[0];
+            const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(baseUrl);
             return (
-              <Link key={item.href} href={item.href}
+              <Link key={`${item.href}-${item.label}`} href={item.href}
                 className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
                 title={!sidebarOpen ? item.label : undefined}>
-                <span className="icon">{item.icon}</span>
+                <span className="icon">{getNavIcon(item.iconName)}</span>
                 {sidebarOpen && <span className="flex-1">{item.label}</span>}
-                {sidebarOpen && item.badge ? (
+                {sidebarOpen && item.badgeCount ? (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium"
                     style={{ background: 'var(--color-status-error)', color: 'white' }}>
-                    {item.badge}
+                    {item.badgeCount}
                   </span>
                 ) : null}
               </Link>
@@ -279,7 +289,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
+          {!isRoutePermitted ? (
+            <div className="max-w-xl mx-auto mt-12 p-8 bg-white border rounded-xl shadow-sm text-center" style={{ borderColor: 'var(--color-parchment)' }}>
+              <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-4" style={{ background: 'var(--color-brass-100)', color: 'var(--color-brass-600)' }}>
+                <ShieldAlert size={28} />
+              </div>
+              <h2 className="text-xl font-serif font-bold mb-2" style={{ fontFamily: 'var(--font-serif)', color: 'var(--color-charcoal)' }}>
+                Access Restricted by Role Policy
+              </h2>
+              <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+                Your current role as <strong>{ROLE_LABELS[session.role]}</strong> is not permitted to access this module (<code>{pathname}</code>). This restriction is enforced according to the central Sakshya role-based access control policy.
+              </p>
+              <div className="flex justify-center gap-3">
+                <Link href="/dashboard" className="btn-primary">
+                  Return to My Workspace
+                </Link>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
 
         {/* Footer */}

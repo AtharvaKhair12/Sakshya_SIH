@@ -87,6 +87,8 @@ export function clearSession(): void {
   localStorage.removeItem(SESSION_KEY);
 }
 
+import { canPerformAction, canAccessInstrument } from './permissions';
+
 // ── Data Access ──
 export function getInstitutions(): Institution[] { return loadStore().institutions; }
 export function getInstitution(id: string): Institution | undefined { return loadStore().institutions.find(i => i.id === id); }
@@ -94,30 +96,60 @@ export function getInstitution(id: string): Institution | undefined { return loa
 export function getUsers(): User[] { return loadStore().users; }
 export function getUser(id: string): User | undefined { return loadStore().users.find(u => u.id === id); }
 
-export function getInstruments(filter?: { institutionId?: string; status?: InstrumentStatus; verificationStatus?: VerificationStatus; assignedReviewer?: string }): Instrument[] {
+export function getInstruments(
+  filter?: { institutionId?: string; status?: InstrumentStatus; verificationStatus?: VerificationStatus; assignedReviewer?: string },
+  session?: DemoSession | null
+): Instrument[] {
   let items = loadStore().instruments;
-  if (filter?.institutionId) items = items.filter(i => i.institutionId === filter.institutionId);
+  // Enforce institution scoping
+  if (session?.role === 'institution' && session.institutionId) {
+    items = items.filter(i => i.institutionId === session.institutionId);
+  } else if (filter?.institutionId) {
+    items = items.filter(i => i.institutionId === filter.institutionId);
+  }
   if (filter?.status) items = items.filter(i => i.status === filter.status);
   if (filter?.verificationStatus) items = items.filter(i => i.verificationStatus === filter.verificationStatus);
   if (filter?.assignedReviewer) items = items.filter(i => i.assignedReviewer === filter.assignedReviewer);
   return items;
 }
 
-export function getInstrument(id: string): Instrument | undefined { return loadStore().instruments.find(i => i.id === id); }
-
-export function getDocuments(instrumentId?: string): UploadedDocument[] {
-  const docs = loadStore().documents;
-  return instrumentId ? docs.filter(d => d.instrumentId === instrumentId) : docs;
+export function getInstrument(id: string, session?: DemoSession | null): Instrument | undefined {
+  const inst = loadStore().instruments.find(i => i.id === id);
+  if (!inst) return undefined;
+  if (session && !canAccessInstrument(session, inst)) {
+    return undefined; // Block unauthorized institution cross-access
+  }
+  return inst;
 }
 
-export function getVerifications(instrumentId?: string): VerificationResult[] {
-  const v = loadStore().verifications;
-  return instrumentId ? v.filter(r => r.instrumentId === instrumentId) : v;
+export function getDocuments(instrumentId?: string, session?: DemoSession | null): UploadedDocument[] {
+  let docs = loadStore().documents;
+  if (instrumentId) docs = docs.filter(d => d.instrumentId === instrumentId);
+  if (session?.role === 'institution' && session.institutionId) {
+    const instIds = new Set(loadStore().instruments.filter(i => i.institutionId === session.institutionId).map(i => i.id));
+    docs = docs.filter(d => instIds.has(d.instrumentId));
+  }
+  return docs;
 }
 
-export function getFindings(instrumentId?: string): ComplianceFinding[] {
-  const f = loadStore().findings;
-  return instrumentId ? f.filter(r => r.instrumentId === instrumentId) : f;
+export function getVerifications(instrumentId?: string, session?: DemoSession | null): VerificationResult[] {
+  let v = loadStore().verifications;
+  if (instrumentId) v = v.filter(r => r.instrumentId === instrumentId);
+  if (session?.role === 'institution' && session.institutionId) {
+    const instIds = new Set(loadStore().instruments.filter(i => i.institutionId === session.institutionId).map(i => i.id));
+    v = v.filter(r => instIds.has(r.instrumentId));
+  }
+  return v;
+}
+
+export function getFindings(instrumentId?: string, session?: DemoSession | null): ComplianceFinding[] {
+  let f = loadStore().findings;
+  if (instrumentId) f = f.filter(r => r.instrumentId === instrumentId);
+  if (session?.role === 'institution' && session.institutionId) {
+    const instIds = new Set(loadStore().instruments.filter(i => i.institutionId === session.institutionId).map(i => i.id));
+    f = f.filter(r => instIds.has(r.instrumentId));
+  }
+  return f;
 }
 
 export function getLifecycleEvents(instrumentId?: string): LifecycleEvent[] {
@@ -125,15 +157,29 @@ export function getLifecycleEvents(instrumentId?: string): LifecycleEvent[] {
   return instrumentId ? e.filter(r => r.instrumentId === instrumentId) : e;
 }
 
-export function getReleaseRequests(filter?: { instrumentId?: string; institutionId?: string; status?: ReleaseRequestStatus }): ReleaseRequest[] {
+export function getReleaseRequests(
+  filter?: { instrumentId?: string; institutionId?: string; status?: ReleaseRequestStatus },
+  session?: DemoSession | null
+): ReleaseRequest[] {
   let items = loadStore().releaseRequests;
+  if (session?.role === 'institution' && session.institutionId) {
+    items = items.filter(r => r.institutionId === session.institutionId);
+  } else if (filter?.institutionId) {
+    items = items.filter(r => r.institutionId === filter.institutionId);
+  }
   if (filter?.instrumentId) items = items.filter(r => r.instrumentId === filter.instrumentId);
-  if (filter?.institutionId) items = items.filter(r => r.institutionId === filter.institutionId);
   if (filter?.status) items = items.filter(r => r.status === filter.status);
   return items;
 }
 
-export function getReleaseRequest(id: string): ReleaseRequest | undefined { return loadStore().releaseRequests.find(r => r.id === id); }
+export function getReleaseRequest(id: string, session?: DemoSession | null): ReleaseRequest | undefined {
+  const req = loadStore().releaseRequests.find(r => r.id === id);
+  if (!req) return undefined;
+  if (session?.role === 'institution' && session.institutionId && req.institutionId !== session.institutionId) {
+    return undefined;
+  }
+  return req;
+}
 
 export function getNotifications(userId?: string): Notification[] {
   const n = loadStore().notifications;
@@ -162,6 +208,9 @@ function addAuditEvent(store: DemoStore, event: Omit<AuditEvent, 'id' | 'timesta
 }
 
 export function createInstrument(data: Omit<Instrument, 'id' | 'status' | 'verificationStatus' | 'updatedAt' | 'documents'>, session: DemoSession): Instrument {
+  if (!canPerformAction(session, 'create_instrument')) {
+    throw new Error('Unauthorized: Role is not authorized to register new FDR instruments.');
+  }
   const store = loadStore();
   const id = `FDR-${new Date().getFullYear()}-${String(store.instruments.length + 1).padStart(4, '0')}`;
   const instrument: Instrument = {
@@ -189,6 +238,9 @@ export function createInstrument(data: Omit<Instrument, 'id' | 'status' | 'verif
 }
 
 export function updateInstrumentStatus(instrumentId: string, newStatus: InstrumentStatus, reason: string, session: DemoSession): Instrument | null {
+  if (!canPerformAction(session, 'verify_source')) {
+    return null;
+  }
   const store = loadStore();
   const idx = store.instruments.findIndex(i => i.id === instrumentId);
   if (idx === -1) return null;
@@ -212,6 +264,9 @@ export function updateInstrumentStatus(instrumentId: string, newStatus: Instrume
 }
 
 export function updateVerificationStatus(instrumentId: string, verStatus: VerificationStatus, session: DemoSession): void {
+  if (!canPerformAction(session, 'verify_source')) {
+    return;
+  }
   const store = loadStore();
   const inst = store.instruments.find(i => i.id === instrumentId);
   if (!inst) return;
@@ -260,6 +315,9 @@ export function addFinding(finding: Omit<ComplianceFinding, 'id' | 'createdAt'>)
 }
 
 export function resolveFinding(findingId: string, resolution: string, session: DemoSession): void {
+  if (!canPerformAction(session, 'resolve_finding')) {
+    throw new Error('Unauthorized: Role is not authorized to resolve compliance findings.');
+  }
   const store = loadStore();
   const finding = store.findings.find(f => f.id === findingId);
   if (!finding) return;
@@ -316,6 +374,12 @@ export function updateReleaseRequest(id: string, updates: Partial<ReleaseRequest
 }
 
 export function makeReleaseDecision(id: string, decision: 'approved' | 'declined' | 'returned', reason: string, session: DemoSession): ReleaseRequest | null {
+  if (!canPerformAction(session, 'make_release_decision')) {
+    throw new Error('Unauthorized: Only Senior Officers possess final release/refund decision authority.');
+  }
+  if (!reason || !reason.trim()) {
+    throw new Error('Mandatory decision reason is required.');
+  }
   const store = loadStore();
   const idx = store.releaseRequests.findIndex(r => r.id === id);
   if (idx === -1) return null;
@@ -373,6 +437,9 @@ export function addNotification(data: Omit<Notification, 'id' | 'createdAt'>): N
 }
 
 export function updateRule(ruleId: string, updates: Partial<RegulatoryRule>, session: DemoSession): RegulatoryRule | null {
+  if (!canPerformAction(session, 'manage_rules')) {
+    throw new Error('Unauthorized: Only System Administrators can configure regulatory rules.');
+  }
   const store = loadStore();
   const idx = store.rules.findIndex(r => r.id === ruleId);
   if (idx === -1) return null;
@@ -396,6 +463,9 @@ export function updateRule(ruleId: string, updates: Partial<RegulatoryRule>, ses
 }
 
 export function updateUser(userId: string, updates: Partial<User>, session: DemoSession): User | null {
+  if (!canPerformAction(session, 'manage_users')) {
+    throw new Error('Unauthorized: Only System Administrators can update user accounts.');
+  }
   const store = loadStore();
   const idx = store.users.findIndex(u => u.id === userId);
   if (idx === -1) return null;
@@ -410,6 +480,9 @@ export function updateUser(userId: string, updates: Partial<User>, session: Demo
 }
 
 export function createUser(data: Omit<User, 'id' | 'createdAt'>, session: DemoSession): User {
+  if (!canPerformAction(session, 'manage_users')) {
+    throw new Error('Unauthorized: Only System Administrators can create new accounts.');
+  }
   const store = loadStore();
   const user: User = { ...data, id: `user-${uuidv4().slice(0, 8)}`, createdAt: new Date().toISOString() };
   store.users.push(user);
@@ -439,6 +512,9 @@ export function assignReviewer(instrumentId: string, reviewerId: string, session
 }
 
 export function addObservation(instrumentId: string, observation: string, session: DemoSession): void {
+  if (!canPerformAction(session, 'record_observation')) {
+    throw new Error('Unauthorized: Role is not authorized to record scrutiny observations.');
+  }
   const store = loadStore();
   addAuditEvent(store, {
     userId: session.userId, userName: getUser(session.userId)?.name || 'Unknown',
@@ -449,6 +525,9 @@ export function addObservation(instrumentId: string, observation: string, sessio
 }
 
 export function escalateInstrument(instrumentId: string, reason: string, session: DemoSession): void {
+  if (!canPerformAction(session, 'escalate_case')) {
+    throw new Error('Unauthorized: Role is not authorized to escalate cases.');
+  }
   const store = loadStore();
   addAuditEvent(store, {
     userId: session.userId, userName: getUser(session.userId)?.name || 'Unknown',
@@ -464,7 +543,10 @@ export function escalateInstrument(instrumentId: string, reason: string, session
   saveStore(store);
 }
 
-export function resetDemoData(): void {
+export function resetDemoData(session?: DemoSession): void {
+  if (session && !canPerformAction(session, 'reset_demo_data')) {
+    throw new Error('Unauthorized: Only System Administrators can trigger demo data reset.');
+  }
   if (!isBrowser()) return;
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(SESSION_KEY);

@@ -13,6 +13,7 @@ const ROLE_ICONS: Record<Role, React.ReactNode> = {
   senior_officer: <FileCheck size={24} />,
   auditor: <Eye size={24} />,
   admin: <Settings size={24} />,
+  system_admin: <Settings size={24} />,
 };
 
 export default function LoginPage() {

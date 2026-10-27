@@ -2,14 +2,15 @@
 // Sakshya — Core Domain Types
 // ============================================================================
 
-export type Role = 'institution' | 'scrutiny_officer' | 'senior_officer' | 'auditor' | 'admin';
+export type Role = 'institution' | 'scrutiny_officer' | 'senior_officer' | 'auditor' | 'admin' | 'system_admin';
 
 export const ROLE_LABELS: Record<Role, string> = {
-  institution: 'Institution',
+  institution: 'Institution User',
   scrutiny_officer: 'Scrutiny Officer',
   senior_officer: 'Senior Officer',
   auditor: 'Auditor',
   admin: 'System Administrator',
+  system_admin: 'System Administrator',
 };
 
 export interface User {
@@ -345,15 +346,20 @@ export interface Permission {
   canCreateInstruments: boolean;
   canEditInstruments: boolean;
   canUploadDocuments: boolean;
-  canVerify: boolean;
+  canVerify: boolean; // alias to canReviewVerification
+  canReviewVerification: boolean;
+  canRecordObservations: boolean;
+  canRequestEvidence: boolean;
   canEscalate: boolean;
   canMakeReleaseDecision: boolean;
   canViewAudit: boolean;
+  canExport: boolean; // alias to canExportReports
+  canExportReports: boolean;
+  canImport: boolean; // alias to canImportData
+  canImportData: boolean;
   canManageUsers: boolean;
   canManageRules: boolean;
   canManageSources: boolean;
-  canExport: boolean;
-  canImport: boolean;
   canResetDemoData: boolean;
 }
 
@@ -362,17 +368,22 @@ export const ROLE_PERMISSIONS: Record<Role, Permission> = {
     canViewOwnInstruments: true,
     canViewAllInstruments: false,
     canCreateInstruments: true,
-    canEditInstruments: false,
+    canEditInstruments: true,
     canUploadDocuments: true,
     canVerify: false,
+    canReviewVerification: false,
+    canRecordObservations: false,
+    canRequestEvidence: false,
     canEscalate: false,
     canMakeReleaseDecision: false,
     canViewAudit: false,
+    canExport: true,
+    canExportReports: true,
+    canImport: false,
+    canImportData: false,
     canManageUsers: false,
     canManageRules: false,
     canManageSources: false,
-    canExport: true,
-    canImport: false,
     canResetDemoData: false,
   },
   scrutiny_officer: {
@@ -382,14 +393,19 @@ export const ROLE_PERMISSIONS: Record<Role, Permission> = {
     canEditInstruments: false,
     canUploadDocuments: false,
     canVerify: true,
+    canReviewVerification: true,
+    canRecordObservations: true,
+    canRequestEvidence: true,
     canEscalate: true,
     canMakeReleaseDecision: false,
     canViewAudit: true,
+    canExport: true,
+    canExportReports: true,
+    canImport: false,
+    canImportData: false,
     canManageUsers: false,
     canManageRules: false,
     canManageSources: false,
-    canExport: true,
-    canImport: false,
     canResetDemoData: false,
   },
   senior_officer: {
@@ -399,14 +415,19 @@ export const ROLE_PERMISSIONS: Record<Role, Permission> = {
     canEditInstruments: false,
     canUploadDocuments: false,
     canVerify: true,
+    canReviewVerification: true,
+    canRecordObservations: true,
+    canRequestEvidence: true,
     canEscalate: false,
     canMakeReleaseDecision: true,
     canViewAudit: true,
+    canExport: true,
+    canExportReports: true,
+    canImport: false,
+    canImportData: false,
     canManageUsers: false,
     canManageRules: false,
     canManageSources: false,
-    canExport: true,
-    canImport: false,
     canResetDemoData: false,
   },
   auditor: {
@@ -416,14 +437,19 @@ export const ROLE_PERMISSIONS: Record<Role, Permission> = {
     canEditInstruments: false,
     canUploadDocuments: false,
     canVerify: false,
+    canReviewVerification: false,
+    canRecordObservations: false,
+    canRequestEvidence: false,
     canEscalate: false,
     canMakeReleaseDecision: false,
     canViewAudit: true,
+    canExport: true,
+    canExportReports: true,
+    canImport: false,
+    canImportData: false,
     canManageUsers: false,
     canManageRules: false,
     canManageSources: false,
-    canExport: true,
-    canImport: false,
     canResetDemoData: false,
   },
   admin: {
@@ -433,14 +459,41 @@ export const ROLE_PERMISSIONS: Record<Role, Permission> = {
     canEditInstruments: false,
     canUploadDocuments: false,
     canVerify: false,
+    canReviewVerification: false,
+    canRecordObservations: false,
+    canRequestEvidence: false,
     canEscalate: false,
-    canMakeReleaseDecision: false,
+    canMakeReleaseDecision: false, // Explicit: Administrator does not have automatic financial decision authority
     canViewAudit: true,
+    canExport: true,
+    canExportReports: true,
+    canImport: true,
+    canImportData: true,
     canManageUsers: true,
     canManageRules: true,
     canManageSources: true,
+    canResetDemoData: true,
+  },
+  system_admin: {
+    canViewOwnInstruments: false,
+    canViewAllInstruments: true,
+    canCreateInstruments: false,
+    canEditInstruments: false,
+    canUploadDocuments: false,
+    canVerify: false,
+    canReviewVerification: false,
+    canRecordObservations: false,
+    canRequestEvidence: false,
+    canEscalate: false,
+    canMakeReleaseDecision: false,
+    canViewAudit: true,
     canExport: true,
+    canExportReports: true,
     canImport: true,
+    canImportData: true,
+    canManageUsers: true,
+    canManageRules: true,
+    canManageSources: true,
     canResetDemoData: true,
   },
 };

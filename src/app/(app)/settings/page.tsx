@@ -18,6 +18,16 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'rules' | 'sources' | 'import' | 'preferences'>('rules');
   const [refreshKey, setRefreshKey] = useState(0);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab && ['rules', 'sources', 'import', 'preferences'].includes(tab)) {
+        setActiveTab(tab as any);
+      }
+    }
+  }, []);
+
   // Rules state
   const rules = useMemo(() => getRules(), [refreshKey]);
   const sources = useMemo(() => getSources(), [refreshKey]);
