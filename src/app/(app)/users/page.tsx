@@ -105,7 +105,7 @@ export default function UsersAdminPage() {
             User Accounts & Role Administration
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Configure demo user personas, manage role assignments, and review active permission capabilities.
+            Manage user accounts, role assignments, and regulatory access permissions.
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export default function UsersAdminPage() {
           onClick={() => setCreateModalOpen(true)}
           className="btn-primary text-xs flex items-center gap-1.5 self-start sm:self-auto"
         >
-          <UserPlus size={15} /> Add Demo User
+          <UserPlus size={15} /> Add User
         </button>
       </div>
 
@@ -254,10 +254,10 @@ export default function UsersAdminPage() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <form onSubmit={handleCreateUser} className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
             <h3 className="text-base font-serif font-bold text-gray-900 flex items-center gap-2">
-              <UserPlus size={18} className="text-forest-600" /> Add Demo User Account
+              <UserPlus size={18} className="text-forest-600" /> Add User Account
             </h3>
             <p className="text-xs text-gray-500">
-              New accounts are immediately usable in the demo session and login screen.
+              New accounts are immediately provisioned and active for login.
             </p>
 
             <div className="space-y-3 text-xs">
@@ -277,7 +277,7 @@ export default function UsersAdminPage() {
                 <label className="block font-semibold text-gray-700 mb-1">Email Address *</label>
                 <input
                   type="email"
-                  placeholder="e.g. rajesh.verma@demo.edu.in"
+                  placeholder="e.g. rajesh.verma@institution.edu.in"
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
                   className="w-full border rounded-lg p-2.5 text-xs font-mono"

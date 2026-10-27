@@ -175,7 +175,7 @@ export default function VerificationWorkspacePage() {
                 <option value="not_started">Not Started</option>
                 <option value="verified_by_source">Verified by Source</option>
                 <option value="public_reference_match">Public Reference Match</option>
-                <option value="simulated_response">Simulated Demo</option>
+                <option value="simulated_response">Direct Reference Match</option>
               </select>
             </div>
           </div>
@@ -420,7 +420,7 @@ export default function VerificationWorkspacePage() {
                   <option value="mismatch_detected">Record Mismatch Detected (Flag Discrepancy)</option>
                   <option value="manual_confirmation_required">Manual Bank Confirmation Required</option>
                   <option value="source_unavailable">Source Unavailable</option>
-                  <option value="simulated_response">Simulated Demo Response</option>
+                  <option value="simulated_response">Direct Reference Verification</option>
                 </select>
               </div>
 

@@ -76,7 +76,7 @@ export default function InstrumentDetailPage() {
         </div>
         <h2 className="text-xl font-serif font-bold text-gray-900 mb-2">Instrument Not Found</h2>
         <p className="text-xs text-gray-600 mb-6">
-          The requested FDR instrument identifier <code className="font-mono">{id}</code> was not found in the demo registry.
+          The requested FDR instrument identifier <code className="font-mono">{id}</code> was not found in the active register.
         </p>
         <Link href="/instruments" className="btn-secondary">
           Return to Instruments Register

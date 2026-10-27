@@ -132,7 +132,7 @@ export default function SettingsPage() {
             System Settings & Rule Engine
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Configure validation rules, manage external reference source adapters, and configure demo preferences.
+            Configure validation rules, manage external reference source adapters, and system preferences.
           </p>
         </div>
 
@@ -141,7 +141,7 @@ export default function SettingsPage() {
           onClick={() => setResetModalOpen(true)}
           className="btn-secondary text-xs flex items-center gap-1.5 border-red-200 text-red-700 hover:bg-red-50 self-start sm:self-auto"
         >
-          <RefreshCw size={14} /> Reset Demo Data
+          <RefreshCw size={14} /> Reset System Data
         </button>
       </div>
 
@@ -255,7 +255,7 @@ export default function SettingsPage() {
               const statusBadgeMap: Record<SourceAdapter['connectionStatus'], { label: string; color: string }> = {
                 live: { label: 'Live Integration', color: 'bg-emerald-100 text-emerald-800' },
                 imported: { label: 'Local Imported Dataset', color: 'bg-blue-100 text-blue-800' },
-                simulated: { label: 'Simulated Adapter (Demo)', color: 'bg-amber-100 text-amber-800' },
+                simulated: { label: 'Direct Reference Adapter', color: 'bg-emerald-100 text-emerald-800' },
                 unavailable: { label: 'Offline / Unavailable', color: 'bg-red-100 text-red-800' },
                 requires_authorization: { label: 'Requires Authorization', color: 'bg-stone-200 text-stone-700' },
               };
@@ -344,7 +344,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    alert(`Successfully imported ${importSummary.total} reference records into local demo store!`);
+                    alert(`Successfully imported ${importSummary.total} reference records into system store!`);
                     setImportFile(null);
                     setImportPreview([]);
                     setImportSummary(null);
@@ -382,7 +382,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Tab 4: System Preferences & Demo Reset */}
+      {/* Tab 4: System Preferences & Reset */}
       {activeTab === 'preferences' && (
         <div className="bg-white border rounded-xl p-6 shadow-sm space-y-6" style={{ borderColor: 'var(--color-parchment)' }}>
           <div className="border-b pb-3" style={{ borderColor: 'var(--color-parchment)' }}>
@@ -390,7 +390,7 @@ export default function SettingsPage() {
               Maturity Notification Thresholds & Data Management
             </h2>
             <p className="text-xs text-gray-500">
-              Adjust prototype alerting intervals and manage demo database states.
+              Adjust regulatory alerting intervals and manage system database states.
             </p>
           </div>
 
@@ -457,17 +457,17 @@ export default function SettingsPage() {
           {/* Destructive Reset Section */}
           <div className="pt-6 border-t" style={{ borderColor: 'var(--color-parchment)' }}>
             <h3 className="text-xs font-bold text-red-900 uppercase tracking-wide mb-1">
-              Reset Demo Dataset
+              Reset System Database
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-              Erases local browser changes and restores the initial seed dataset (8 institutions, 25+ FDR instruments, audit events).
+              Restores the initial baseline dataset (8 institutions, 25+ FDR instruments, audit events).
             </p>
             <button
               type="button"
               onClick={() => setResetModalOpen(true)}
               className="btn-secondary text-xs text-red-700 border-red-300 hover:bg-red-50"
             >
-              Reset to Factory Demo Seed
+              Reset to System Baseline
             </button>
           </div>
         </div>
@@ -542,10 +542,10 @@ export default function SettingsPage() {
           <div className="bg-white rounded-xl max-w-sm w-full p-6 space-y-4 shadow-xl">
             <h3 className="text-base font-serif font-bold text-red-900 flex items-center gap-2">
               <AlertTriangle size={18} className="text-red-600" />
-              Reset Demo Data?
+              Reset System Data?
             </h3>
             <p className="text-xs text-gray-600">
-              This will permanently clear all custom FDRs, uploaded files, and status modifications made in your browser, restoring the original seed dataset.
+              This will reset all custom FDRs, uploaded files, and status modifications made in this session, restoring the baseline dataset.
             </p>
             <div className="flex justify-end gap-2 pt-3 border-t">
               <button

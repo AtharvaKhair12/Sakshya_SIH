@@ -4,14 +4,14 @@ import { AuthProvider } from '@/components/auth-context';
 
 export const metadata: Metadata = {
   title: 'Sakshya — Evidence & FDR Management Workspace',
-  description: 'Professional administrative portal for streamlining security deposit and Fixed Deposit Receipt (FDR) management. Prototype environment — independent demonstration.',
+  description: 'Official administrative portal for streamlining AICTE security deposit and Fixed Deposit Receipt (FDR) management.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/sakshya-logo.png" />
       </head>
       <body className="min-h-screen">
         <AuthProvider>

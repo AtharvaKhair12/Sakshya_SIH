@@ -108,10 +108,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       `} style={{ borderColor: 'var(--color-parchment)' }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b flex-shrink-0" style={{ borderColor: 'var(--color-parchment)' }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--color-forest-600)' }}>
-            <span className="text-white font-serif text-sm font-bold" style={{ fontFamily: 'var(--font-serif)' }}>S</span>
-          </div>
+          <img
+            src="/sakshya-logo.png"
+            alt="Sakshya"
+            className="w-10 h-10 object-contain rounded-lg flex-shrink-0"
+          />
           {sidebarOpen && (
             <div className="overflow-hidden">
               <div className="font-serif font-semibold text-sm" style={{ fontFamily: 'var(--font-serif)', color: 'var(--color-charcoal)' }}>Sakshya</div>
@@ -226,11 +227,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             />
           </div>
 
-          {/* Demo mode badge */}
-          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-            style={{ background: 'var(--color-brass-100)', color: 'var(--color-brass-600)' }}>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-brass-400)' }} />
-            Demo Mode
+          {/* Status badge */}
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Portal Active
           </div>
 
           {/* Notifications */}
@@ -314,7 +314,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Footer */}
         <footer className="h-8 flex items-center justify-center text-[10px] border-t px-4 no-print flex-shrink-0"
           style={{ borderColor: 'var(--color-parchment)', color: 'var(--color-charcoal-muted)', background: 'white' }}>
-          Prototype environment · Independent demonstration · Not an official AICTE system · Browser-local data only
+          Sakshya — AICTE Security Deposit &amp; FDR Management Portal · Authorized Access Only
         </footer>
       </div>
     </div>

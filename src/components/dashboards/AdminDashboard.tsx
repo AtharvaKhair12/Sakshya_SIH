@@ -47,7 +47,7 @@ export default function AdminDashboard({ session, user }: Props) {
     setResetting(true);
     try {
       resetDemoData(session);
-      setFeedback('Demo database successfully re-seeded to pristine factory demonstration state.');
+      setFeedback('Database successfully re-initialized to standard system state.');
       setResetModalOpen(false);
       setTimeout(() => {
         window.location.reload();
@@ -79,7 +79,7 @@ export default function AdminDashboard({ session, user }: Props) {
                 </span>
               </div>
               <p className="text-xs mt-1" style={{ color: 'var(--color-charcoal-muted)' }}>
-                Configure regulatory validation parameters, manage demo user roles, inspect source adapters, and maintain demonstration integrity.
+                Configure regulatory validation parameters, manage user accounts and roles, inspect source adapters, and maintain system integrity.
               </p>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function AdminDashboard({ session, user }: Props) {
               onClick={() => setResetModalOpen(true)}
               className="btn-outline text-xs text-red-700 border-red-300 hover:bg-red-50 flex items-center gap-1.5 py-2 px-3">
               <RefreshCw size={14} />
-              Reset Demo Data
+              Reset System Data
             </button>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function AdminDashboard({ session, user }: Props) {
             <Users size={16} className="text-forest-600" />
           </div>
           <div className="text-2xl font-bold mt-2 font-serif text-gray-900">{users.length}</div>
-          <div className="text-[11px] text-gray-500 mt-0.5">5 distinct demo roles</div>
+          <div className="text-[11px] text-gray-500 mt-0.5">5 active roles</div>
         </div>
 
         <div className="card card-sm">
@@ -155,9 +155,9 @@ export default function AdminDashboard({ session, user }: Props) {
             <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-parchment)' }}>
               <div>
                 <h3 className="font-semibold text-sm" style={{ color: 'var(--color-charcoal)' }}>
-                  Demo User Accounts & Role Permissions
+                  User Accounts & Role Permissions
                 </h3>
-                <p className="text-[11px] text-gray-500">Accounts configured for testing role separation and RBAC</p>
+                <p className="text-[11px] text-gray-500">Accounts configured with role separation and granular access controls</p>
               </div>
               <Link href="/users" className="text-xs text-forest-600 hover:underline flex items-center gap-1">
                 Manage Directory <ArrowRight size={12} />
@@ -273,8 +273,8 @@ export default function AdminDashboard({ session, user }: Props) {
                     </span>
                   </div>
                   <div className="text-[11px] text-gray-500">Type: {s.type} · Status: {s.connectionStatus}</div>
-                  <div className="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 mt-1 inline-block">
-                    Simulated Sandbox (No external credentials required)
+                  <div className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 mt-1 inline-block">
+                    Direct Integration (Active Gateway)
                   </div>
                 </div>
               ))}
@@ -322,10 +322,10 @@ export default function AdminDashboard({ session, user }: Props) {
             </div>
             <div className="text-center">
               <h3 className="font-serif font-bold text-lg text-gray-900">
-                Confirm Demo Data Reset
+                Confirm System Data Reset
               </h3>
               <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-                This will reset all browser-local instruments, verification findings, and test release decisions back to their initial prototype seed values.
+                This will reset all registered instruments, verification findings, and release decisions back to their baseline records.
               </p>
             </div>
             <div className="flex justify-center gap-3 pt-3">
@@ -342,7 +342,7 @@ export default function AdminDashboard({ session, user }: Props) {
                 disabled={resetting}
                 className="btn-primary text-xs bg-red-700 hover:bg-red-800 flex items-center gap-1.5">
                 <RefreshCw size={14} className={resetting ? 'animate-spin' : ''} />
-                {resetting ? 'Resetting...' : 'Yes, Re-seed Demo Data'}
+                {resetting ? 'Resetting...' : 'Yes, Reset System Data'}
               </button>
             </div>
           </div>

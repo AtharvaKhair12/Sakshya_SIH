@@ -79,7 +79,7 @@ export default function AuditLogPage() {
       <div className="p-3 bg-stone-100/70 border border-stone-200 rounded-xl text-xs text-stone-600 flex items-start gap-2">
         <ShieldCheck size={16} className="text-forest-700 flex-shrink-0 mt-0.5" />
         <div>
-          <strong>Traceable Demonstration Log:</strong> All user actions, validations, and status overrides are recorded chronologically with actor identities and recorded justifications. In a full production deployment, this log is cryptographically signed and stored in immutable server-side storage.
+          <strong>Traceable Audit Log:</strong> All user actions, validations, and status overrides are recorded chronologically with actor identities and recorded justifications.
         </div>
       </div>
 

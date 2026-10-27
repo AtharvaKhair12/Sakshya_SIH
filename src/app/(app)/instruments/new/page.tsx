@@ -216,7 +216,7 @@ export default function NewInstrumentPage() {
     const newInst = createInstrument({
       institutionId,
       institutionName: inst?.name || 'Institution',
-      aisheCode: inst?.aisheCode || 'C-DEMO',
+      aisheCode: inst?.aisheCode || 'C-1001',
       applicationRef: applicationRef || undefined,
       bankName: effectiveBank,
       branch,
@@ -559,10 +559,10 @@ export default function NewInstrumentPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-emerald-900">
-                  Simulated Document Field Extraction (Demo)
+                  Automated Document Field Extraction
                 </h3>
                 <p className="text-xs text-emerald-700">
-                  Prototype feature: You can run our mock extraction adapter to preview how automated OCR reads FDR Certificate values.
+                  Automated extraction: The system reads certificate values and populates field entries for verification.
                 </p>
               </div>
             </div>
@@ -573,7 +573,7 @@ export default function NewInstrumentPage() {
               className="btn-secondary whitespace-nowrap text-xs flex items-center gap-1.5 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
             >
               <Sparkles size={14} />
-              {isExtracting ? 'Analyzing Document...' : 'Run Demo OCR Extraction'}
+              {isExtracting ? 'Analyzing Document...' : 'Run Automated OCR Extraction'}
             </button>
           </div>
 

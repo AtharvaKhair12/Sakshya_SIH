@@ -25,7 +25,7 @@ export default function ErrorPage({
           Application Error
         </h1>
         <p className="text-xs text-gray-500">
-          An unexpected condition occurred while processing this transaction. The demo state remains safe in local storage.
+          An unexpected condition occurred while processing this transaction. System data remains safe in storage.
         </p>
         <div className="pt-2 flex items-center justify-center gap-3">
           <button

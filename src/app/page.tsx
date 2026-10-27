@@ -7,9 +7,9 @@ import { DEMO_CREDENTIALS } from '@/lib/demo-data';
 import { Role } from '@/lib/types';
 import {
   Building2, Search, FileCheck, Eye, Settings,
-  Clock, Lock, History, ArrowRight, ShieldCheck,
+  Clock, History, ArrowRight, ShieldCheck,
   UploadCloud, AlertTriangle, Layers, BellRing,
-  UserCheck, CheckCircle2, ChevronRight
+  UserCheck, CheckCircle2
 } from 'lucide-react';
 
 const ROLE_ICONS: Record<Role, React.ReactNode> = {
@@ -26,8 +26,8 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   scrutiny_officer: 'Review submitted instruments, investigate discrepancies, and request supporting evidence.',
   senior_officer: 'Review escalated cases, resolve exceptions, and record authorized decisions.',
   auditor: 'Inspect verification records, decision history, and audit trails in read-only mode.',
-  admin: 'Manage prototype users, configure rules, and maintain reference data.',
-  system_admin: 'Manage prototype users, configure rules, and maintain reference data.',
+  admin: 'Manage user accounts, configure rules, and maintain reference data.',
+  system_admin: 'Manage user accounts, configure rules, and maintain reference data.',
 };
 
 // 5 Connected Stages: Submission to Resolution
@@ -92,11 +92,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showManualForm, setShowManualForm] = useState(false);
 
   React.useEffect(() => {
     if (isAuthenticated) {
@@ -104,23 +100,7 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleDemoLogin = (cred: typeof DEMO_CREDENTIALS[0]) => {
-    setIsLoading(true);
-    setError('');
-    setTimeout(() => {
-      login(cred.userId, cred.role, cred.role === 'institution' ? 'inst-001' : undefined);
-      router.push('/dashboard');
-    }, 350);
-  };
-
-  const handleFormLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const cred = DEMO_CREDENTIALS.find(c => c.email.toLowerCase() === email.trim().toLowerCase() && c.password === password);
-    if (!cred) {
-      setError('Invalid demo credentials. Please click any role card below for instant demo access.');
-      return;
-    }
+  const handleRoleLogin = (cred: typeof DEMO_CREDENTIALS[0]) => {
     setIsLoading(true);
     setTimeout(() => {
       login(cred.userId, cred.role, cred.role === 'institution' ? 'inst-001' : undefined);
@@ -131,13 +111,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-ivory)' }}>
       {/* Top Header Bar */}
-      <header className="border-b px-6 py-4 flex items-center justify-between bg-white/80 backdrop-blur-sm sticky top-0 z-30"
+      <header className="border-b px-6 py-3.5 flex items-center justify-between bg-white/90 backdrop-blur-sm sticky top-0 z-30"
         style={{ borderColor: 'var(--color-parchment)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-            style={{ background: 'var(--color-forest-700)', color: 'white' }}>
-            <span className="font-serif text-lg font-bold" style={{ fontFamily: 'var(--font-serif)' }}>S</span>
-          </div>
+          <img
+            src="/sakshya-logo.png"
+            alt="Sakshya Logo"
+            className="w-10 h-10 object-contain rounded-lg flex-shrink-0"
+          />
           <div>
             <div className="font-serif text-lg font-bold leading-tight" style={{ fontFamily: 'var(--font-serif)', color: 'var(--color-charcoal)' }}>
               Sakshya
@@ -157,7 +138,7 @@ export default function LoginPage() {
           <a href="#workspace"
             className="text-xs font-medium px-3.5 py-1.5 rounded-lg border transition-colors hover:bg-gray-50 flex items-center gap-1.5"
             style={{ borderColor: 'var(--color-parchment)', color: 'var(--color-charcoal)' }}>
-            Demo Access <ArrowRight size={13} />
+            Portal Access <ArrowRight size={13} />
           </a>
         </div>
       </header>
@@ -185,11 +166,11 @@ export default function LoginPage() {
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <a href="#workspace"
               className="btn-primary text-xs font-semibold py-2.5 px-5 rounded-lg flex items-center gap-2 shadow-sm">
-              Explore Demo Roles <ArrowRight size={15} />
+              Enter Workspace <ArrowRight size={15} />
             </a>
             <span className="text-xs text-gray-500 flex items-center gap-1.5">
               <CheckCircle2 size={14} className="text-emerald-600" />
-              Pre-configured sandbox with 5 distinct role workspaces
+              Unified access for institutions, scrutiny officers, and leadership
             </span>
           </div>
         </div>
@@ -304,7 +285,7 @@ export default function LoginPage() {
           </div>
         </section>
 
-        {/* Section 4: Enter Your Workspace (Role Login Panel) */}
+        {/* Section 4: Enter Your Workspace (Role Selection Cards) */}
         <section id="workspace" className="pt-8 border-t space-y-6" style={{ borderColor: 'var(--color-parchment)' }}>
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase"
@@ -319,7 +300,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* 5 Distinct Role Cards */}
+          {/* 5 Distinct Role Cards (Balanced 5-Role Layout) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {DEMO_CREDENTIALS.map((cred) => {
               const isSelected = selectedRole === cred.role;
@@ -328,7 +309,7 @@ export default function LoginPage() {
               return (
                 <button
                   key={cred.role}
-                  onClick={() => handleDemoLogin(cred)}
+                  onClick={() => handleRoleLogin(cred)}
                   disabled={isLoading}
                   onMouseEnter={() => setSelectedRole(cred.role)}
                   onMouseLeave={() => setSelectedRole(null)}
@@ -351,7 +332,7 @@ export default function LoginPage() {
                       </div>
                       <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded tracking-wider"
                         style={{ background: 'var(--color-ivory)', color: 'var(--color-charcoal-muted)' }}>
-                        Demo access
+                        Secure Access
                       </span>
                     </div>
 
@@ -374,81 +355,7 @@ export default function LoginPage() {
                 </button>
               );
             })}
-
-            {/* Manual Sign In Toggle Card */}
-            <div className="p-5 rounded-2xl border bg-white/70 flex flex-col justify-between space-y-4"
-              style={{ borderColor: 'var(--color-parchment)' }}>
-              <div>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100 text-gray-600 mb-3">
-                  <Lock size={18} />
-                </div>
-                <div className="font-serif font-bold text-base text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
-                  Manual Sign In
-                </div>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  Have specific demo credentials? Switch to the manual credentials input form.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowManualForm(!showManualForm)}
-                className="btn-secondary text-xs font-medium py-2 px-3 w-full text-center">
-                {showManualForm ? 'Hide Form' : 'Show Manual Sign In Form'}
-              </button>
-            </div>
           </div>
-
-          {/* Collapsible Manual Form */}
-          {showManualForm && (
-            <div className="max-w-md mx-auto bg-white p-6 rounded-2xl border shadow-sm space-y-4 fade-in"
-              style={{ borderColor: 'var(--color-parchment)' }}>
-              <div className="border-b pb-2">
-                <h3 className="font-serif font-bold text-sm text-gray-900">Demo Sign In Form</h3>
-                <p className="text-xs text-gray-500">Sign in using any configured demo credentials</p>
-              </div>
-
-              <form onSubmit={handleFormLogin} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="email">Demo Email</label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="e.g., ananya.iyer@aicte-demo.in"
-                    className="form-input text-xs w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1" htmlFor="password">Demo Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Password (demo2025)"
-                    className="form-input text-xs w-full"
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">{error}</p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading || !email || !password}
-                  className="btn-primary w-full text-xs py-2.5 font-semibold flex items-center justify-center gap-1.5">
-                  <Lock size={14} />
-                  {isLoading ? 'Signing In...' : 'Sign In with Demo Credentials'}
-                </button>
-              </form>
-            </div>
-          )}
         </section>
       </main>
 
@@ -457,10 +364,11 @@ export default function LoginPage() {
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-md flex items-center justify-center font-serif text-xs font-bold text-white"
-                style={{ background: 'var(--color-forest-700)' }}>
-                S
-              </div>
+              <img
+                src="/sakshya-logo.png"
+                alt="Sakshya"
+                className="w-7 h-7 object-contain rounded-md"
+              />
               <span className="font-serif font-bold text-gray-900" style={{ fontFamily: 'var(--font-serif)' }}>
                 Sakshya
               </span>
@@ -489,7 +397,7 @@ export default function LoginPage() {
           </div>
 
           <div className="pt-3 border-t text-center text-gray-500 text-[11px] leading-relaxed" style={{ borderColor: 'var(--color-parchment)' }}>
-            Independent prototype for AICTE-related workflows · Not an official AICTE service.
+            Sakshya — AICTE Security Deposit &amp; Fixed Deposit Receipt (FDR) Compliance Workspace.
           </div>
         </div>
       </footer>

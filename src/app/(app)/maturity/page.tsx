@@ -293,7 +293,7 @@ export default function MaturityWorkspacePage() {
                               className={`btn-secondary text-[11px] px-2.5 py-1 flex items-center gap-1 ${
                                 isAck ? 'border-emerald-300 text-emerald-700 bg-emerald-50' : ''
                               }`}
-                              title="Schedule demo in-app alert"
+                              title="Schedule in-app alert"
                             >
                               <Bell size={12} />
                               {isAck ? 'Alerted' : 'Notify'}

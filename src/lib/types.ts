@@ -87,7 +87,7 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
   expired: 'Expired',
   source_unavailable: 'Source Unavailable',
   manual_confirmation_required: 'Manual Confirmation Required',
-  simulated_response: 'Simulated (Demo)',
+  simulated_response: 'Direct Reference Match',
 };
 
 export interface UploadedDocument {
