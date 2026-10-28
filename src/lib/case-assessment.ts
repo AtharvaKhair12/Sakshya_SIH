@@ -183,7 +183,7 @@ export function computeCaseAssessment(ctx: CaseAssessmentContext): CaseAssessmen
     q4.push({
       id: `task-mat-${instrument.id}`,
       instrumentId: instrument.id,
-      ruleId: 'RULE-APH-6.46.6',
+      ruleId: 'RULE-REL-TENOR-06',
       title: 'Request Current Bank Renewal Receipt or Statement',
       description: 'Maturity date has passed. Request institution to submit current bank renewal advice or branch ledger statement.',
       evidenceRef: instrument.maturityDate,
@@ -195,12 +195,12 @@ export function computeCaseAssessment(ctx: CaseAssessmentContext): CaseAssessmen
     });
   }
 
-  const missingAffidavit = requirements.find(r => r.ruleId === 'RULE-APH-6.46.2' && r.status === 'missing');
+  const missingAffidavit = requirements.find(r => (r.ruleId === 'RULE-REL-AFF-02' || r.legacyRuleId === 'RULE-APH-6.46.2' || r.ruleId === 'RULE-APH-6.46.2') && r.status === 'missing');
   if (missingAffidavit && (instrument.status === 'release_requested' || releaseRequest)) {
     q4.push({
       id: `task-aff-${instrument.id}`,
       instrumentId: instrument.id,
-      ruleId: 'RULE-APH-6.46.2',
+      ruleId: 'RULE-REL-AFF-02',
       title: 'Upload Notarized Affidavit 6',
       description: 'Submit Affidavit 6 sworn before First Class Magistrate/Public Notary declaring no student dues and FDR particulars.',
       evidenceRef: 'AICTE APH Appendix 8 Format',
@@ -212,15 +212,15 @@ export function computeCaseAssessment(ctx: CaseAssessmentContext): CaseAssessmen
     });
   }
 
-  const missingLetter = requirements.find(r => r.ruleId === 'RULE-APH-6.46.1' && r.status === 'missing');
+  const missingLetter = requirements.find(r => (r.ruleId === 'RULE-REL-REQ-01' || r.legacyRuleId === 'RULE-APH-6.46.1' || r.ruleId === 'RULE-APH-6.46.1') && r.status === 'missing');
   if (missingLetter && (instrument.status === 'release_requested' || releaseRequest)) {
     q4.push({
       id: `task-letter-${instrument.id}`,
       instrumentId: instrument.id,
-      ruleId: 'RULE-APH-6.46.1',
+      ruleId: 'RULE-REL-REQ-01',
       title: 'Submit Formal Release Application Letter',
       description: 'Submit formal application on official letterhead signed by Chairman/President of the Trust/Society.',
-      evidenceRef: 'Clause 6.46.1',
+      evidenceRef: 'Clause 6.46.a(1)',
       responsibleRole: 'institution',
       priority: 'high',
       status: 'pending',
@@ -229,12 +229,12 @@ export function computeCaseAssessment(ctx: CaseAssessmentContext): CaseAssessmen
     });
   }
 
-  const pendingClearance = requirements.find(r => r.ruleId === 'RULE-APH-6.46.5' && r.status === 'awaiting_confirmation');
+  const pendingClearance = requirements.find(r => (r.ruleId === 'RULE-REL-CLR-05' || r.legacyRuleId === 'RULE-APH-6.46.5' || r.ruleId === 'RULE-APH-6.46.5') && r.status === 'awaiting_confirmation');
   if (pendingClearance && (instrument.status === 'release_requested' || releaseRequest)) {
     q4.push({
       id: `task-clear-${instrument.id}`,
       instrumentId: instrument.id,
-      ruleId: 'RULE-APH-6.46.5',
+      ruleId: 'RULE-REL-CLR-05',
       title: 'Verify Bureau Clearances (PGRC, Vigilance & Regional Office)',
       description: 'Confirm clearance records from Public Grievances Redressal Cell and Vigilance Bureau verifying zero pending student/faculty claims.',
       evidenceRef: 'Internal Registry',
@@ -250,7 +250,7 @@ export function computeCaseAssessment(ctx: CaseAssessmentContext): CaseAssessmen
     q4.push({
       id: `task-scrutiny-${instrument.id}`,
       instrumentId: instrument.id,
-      ruleId: 'RULE-APH-6.46.5',
+      ruleId: 'RULE-REL-CLR-05',
       title: 'Scrutiny Officer Recommendation & Dossier Assembly',
       description: 'Scrutiny Officer must review document suitability, record findings, and escalate dossier to Senior Officer.',
       evidenceRef: 'Case Dossier',
@@ -266,7 +266,7 @@ export function computeCaseAssessment(ctx: CaseAssessmentContext): CaseAssessmen
     q4.push({
       id: `task-senior-${instrument.id}`,
       instrumentId: instrument.id,
-      ruleId: 'RULE-APH-6.46.9',
+      ruleId: 'RULE-WORKFLOW-DECISION-09',
       title: 'Senior Officer Authorized Release Decision',
       description: 'Review complete checklist and record authorized decision (Approved/Declined) with mandatory documented rationale.',
       evidenceRef: 'Sanction Order Workflow',

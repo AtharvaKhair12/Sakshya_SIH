@@ -362,15 +362,27 @@ export function assessDocumentSuitability(
   if (type === 'deposit_advice') {
     const hasAmount = Boolean(fields.depositAmount?.value);
     const hasMaturity = Boolean(fields.maturityDate?.value);
-    const hasPledge = Boolean(fields.jointHolder?.value || fields.lienPledgeStatus?.value);
+    const rawJoint = fields.jointHolder?.value ? String(fields.jointHolder.value).trim().toLowerCase() : '';
+    const isJointNotApplicable = rawJoint === 'not applicable' || rawJoint === 'n/a';
+    const hasExplicitAiCtePledge = Boolean(
+      (rawJoint && !isJointNotApplicable && (rawJoint.includes('aicte') || rawJoint.includes('regional officer'))) ||
+      (fields.lienPledgeStatus?.value && String(fields.lienPledgeStatus.value).toLowerCase().includes('aicte'))
+    );
+
+    let rationale = '';
+    if (hasExplicitAiCtePledge) {
+      rationale = 'Document is classified as Bank Deposit Advice with explicit joint AICTE pledge endorsement. Suitable as secondary evidence of deposit creation under AICTE APH Clause 6.46.a(3); requires scrutiny verification.';
+    } else if (isJointNotApplicable) {
+      rationale = 'Document is classified as Bank Deposit Advice. Acceptable as deposit creation evidence under Clause 6.46.a(3). Note: Advice face indicates Joint Holder as "Not Applicable". This is logged as an operational manual-review check (to confirm whether a separate bank lien letter was issued to AICTE), not as a confirmed regulatory violation.';
+    } else {
+      rationale = 'Document is classified as Bank Deposit Advice. Acceptable as deposit creation evidence under Clause 6.46.a(3); scrutiny review required to verify bank lien / pledge status.';
+    }
 
     return {
       status: hasAmount && hasMaturity ? 'conditionally_suitable' : 'pending_review',
       documentCategory: 'deposit_advice',
       meetsChecklistCriteria: hasAmount && hasMaturity,
-      rationale: hasPledge
-        ? 'Document is classified as Bank Deposit Advice with explicit joint pledge. Suitable as secondary evidence of deposit creation under AICTE APH Clause 6.46.3; requires scrutiny verification.'
-        : 'Document is classified as Bank Deposit Advice. Acceptable as deposit creation evidence, but lacks explicit joint AICTE pledge endorsement on the advice face.',
+      rationale,
       distinctionNote: 'Assessment A (Suitability): Verifies document structure and checklist presence. It does NOT constitute independent bank authenticity verification.',
     };
   }

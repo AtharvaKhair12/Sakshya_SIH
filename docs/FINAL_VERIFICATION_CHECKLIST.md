@@ -105,73 +105,73 @@
 
 ## Section 3: Regulatory Rule Catalog & Grounding (AICTE APH 2024–2027)
 
-### Check 3.1: Clause 6.46.1 — Formal Application Letter Check
+### Check 3.1: Clause 6.46.a(1) — Formal Application Letter Check (RULE-REL-REQ-01)
 - **Status**: [x] PASS
 - **What was tested**: Verification of formal institutional release application letter requirement.
 - **Command / Procedure**: `FIXTURE-02` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Missing request letter triggers `missing` status for `RULE-APH-6.46.1`, creates blocker, and assigns task to `institution`.
-- **Reference**: `RULE-APH-6.46.1` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Observed Result**: Missing request letter triggers `missing` status for `RULE-REL-REQ-01`, creates blocker, and assigns task to `institution`.
+- **Reference**: `RULE-REL-REQ-01` (legacy: `RULE-APH-6.46.1`) in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Sourced to official `Clause 6.46.a(1)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.2: Clause 6.46.2 — Notarized Affidavit 6 Check
+### Check 3.2: Clause 6.46.a(2) — Notarized Affidavit 6 Check (RULE-REL-AFF-02)
 - **Status**: [x] PASS
 - **What was tested**: Verification of notarized Affidavit 6 declaration requirement and failure handling.
 - **Command / Procedure**: `FIXTURE-03` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Missing Affidavit 6 triggers `missing` status and records exact statutory reference `Clause 6.46.2 & Appendix 8`.
-- **Reference**: `RULE-APH-6.46.2` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Observed Result**: Missing Affidavit 6 triggers `missing` status and records exact statutory reference `Clause 6.46.a(2) & Appendix 8`.
+- **Reference**: `RULE-REL-AFF-02` (legacy: `RULE-APH-6.46.2`) in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Sourced to official `Clause 6.46.a(2) & Appendix 8`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.3: Clause 6.46.3 — FDR / Deposit Advice Evidence Check
+### Check 3.3: Clause 6.46.a(3) — FDR / Deposit Advice Evidence Check (RULE-REL-FDR-03)
 - **Status**: [x] PASS
 - **What was tested**: Verification of FDR or deposit creation evidence requirement.
 - **Command / Procedure**: `FIXTURE-04` assertion in `/api/test-fdr-engine`.
 - **Observed Result**: Missing FDR evidence produces blocker and prevents `ready_for_approval` state progression.
-- **Reference**: `RULE-APH-6.46.3` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Reference**: `RULE-REL-FDR-03` (legacy: `RULE-APH-6.46.3`) in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Corrected: Removed inaccurate `Clause 1.4.5` citation; grounded strictly in `Clause 6.46.a(3)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.4: Clause 6.46.4 — Latest Approval Order (EoA / LoA) Check
+### Check 3.4: Clause 6.46.a(4) — Latest Approval Order (EoA / LoA) Check (RULE-REL-EOA-04)
 - **Status**: [x] PASS
 - **What was tested**: Verification of latest Extension of Approval (EoA) / Letter of Approval requirement.
 - **Command / Procedure**: `FIXTURE-05` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Missing EoA/LoA triggers `missing` status for `RULE-APH-6.46.4`.
-- **Reference**: `RULE-APH-6.46.4` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Observed Result**: Missing EoA/LoA triggers `missing` status for `RULE-REL-EOA-04`.
+- **Reference**: `RULE-REL-EOA-04` (legacy: `RULE-APH-6.46.4`) in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Sourced to official `Clause 6.46.a(4)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.5: Clause 6.46.5 — Internal Clearances (PGRC & Vigilance) Presumption of Innocence
+### Check 3.5: Clause 6.46.b — Internal Clearances (PGRC & Vigilance) Presumption of Innocence (RULE-REL-CLR-05)
 - **Status**: [x] PASS
 - **What was tested**: Verification that unrecorded clearances show `awaiting_confirmation` rather than accusing institution.
 - **Command / Procedure**: `FIXTURE-06` assertion in `/api/test-fdr-engine`.
 - **Observed Result**: Unrecorded clearances returned `awaiting_confirmation` with explanation: `'Missing record means clearance is unrecorded, not that it was rejected'`.
-- **Reference**: `RULE-APH-6.46.5` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Reference**: `RULE-REL-CLR-05` (legacy: `RULE-APH-6.46.5`) in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Sourced to official `Clause 6.46.b`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.6: Clause 1.4.6 — Replacement Continuity Chain Protocol
+### Check 3.6: Internal Workflow Control — Replacement Continuity Protocol (RULE-WORKFLOW-REPLACE-10)
 - **Status**: [x] PASS
 - **What was tested**: Verification that replacement instruments require a linked predecessor ID.
-- **Command / Procedure**: `FIXTURE-07` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Unlinked replacement instrument flagged with `inconsistent` status under `RULE-APH-1.4.6`.
-- **Reference**: `RULE-APH-1.4.6` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Command / Procedure**: `FIXTURE-07` and `REG-02` assertions in `/api/test-fdr-engine`.
+- **Observed Result**: Unlinked replacement instrument flagged with `inconsistent` status under `RULE-WORKFLOW-REPLACE-10` with `isOfficialRule: false` (workflow control).
+- **Reference**: `RULE-WORKFLOW-REPLACE-10` in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Corrected: Removed inaccurate `Clause 1.4.6` statutory claim (APH Clause 1.4.6 is DSC digital signature upload).
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.7: Clause 6.46.7 — Progressive Closure Specific Exemption
+### Check 3.7: Chapter III & Clause 6.46 — Progressive Closure Exemption Check (RULE-REL-CLOSE-07)
 - **Status**: [x] PASS
 - **What was tested**: Conditional evaluation of University/State DTE progressive closure certificate.
-- **Command / Procedure**: `FIXTURE-10` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Evaluated conditionally only when progressive closure flag is active; missing closure certificate flagged appropriately.
-- **Reference**: `RULE-APH-6.46.7` in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: None.
+- **Command / Procedure**: `FIXTURE-10` and `REG-04` assertions in `/api/test-fdr-engine`.
+- **Observed Result**: Evaluated conditionally only when progressive closure flag is active; returns `not_applicable` on standard tenor cases.
+- **Reference**: `RULE-REL-CLOSE-07` (legacy: `RULE-APH-6.46.7`) in `src/lib/regulatory-rules.ts`
+- **Defects & Corrections**: Sourced to official `Chapter III & Clause 6.46`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
@@ -184,6 +184,52 @@
 - **Defects & Corrections**: None.
 - **Retest Result**: Passed.
 - **Limitations**: None.
+
+---
+
+## Section 3B: Targeted Regulatory Regression Suite (REG-01 to REG-07)
+
+### Check 3B.1: REG-01 — Clause 1.4.5 Independence
+- **Status**: [x] PASS
+- **What was tested**: Regression proving Clause 1.4.5 is strictly application submission copy, not FDR joint-pledge or duplicate registration rule.
+- **Command / Procedure**: `REG-01` in `/api/test-fdr-engine`.
+- **Observed Result**: Zero rules cite Clause 1.4.5 for joint pledge; FDR rule strictly cites `Clause 6.46.a(3)`.
+
+### Check 3B.2: REG-02 — Clause 1.4.6 Independence
+- **Status**: [x] PASS
+- **What was tested**: Regression proving Clause 1.4.6 (DSC upload) is not claimed as replacement continuity protocol.
+- **Command / Procedure**: `REG-02` in `/api/test-fdr-engine`.
+- **Observed Result**: Replacement continuity classified as `reviewStatus: 'workflow_control'` and `isOfficialRule: false`.
+
+### Check 3B.3: REG-03 — Official Release Hierarchy Alignment
+- **Status**: [x] PASS
+- **What was tested**: Regression verifying exact matching to APH 2024-2027 release hierarchy (`6.46.a(1-4)`, `6.46.b`).
+- **Command / Procedure**: `REG-03` in `/api/test-fdr-engine`.
+- **Observed Result**: 100% match across all statutory release rules.
+
+### Check 3B.4: REG-04 — Conditional Rule Applicability
+- **Status**: [x] PASS
+- **What was tested**: Regression verifying conditional rules return `not_applicable` unless their specific trigger conditions are met.
+- **Command / Procedure**: `REG-04` in `/api/test-fdr-engine`.
+- **Observed Result**: Progressive closure, anti-embezzlement, and replacement continuity rules all return `not_applicable` on standard unflagged cases.
+
+### Check 3B.5: REG-05 — Unsupported Legal Claim Governance
+- **Status**: [x] PASS
+- **What was tested**: Regression proving unsupported legal claims are flagged as `draft_awaiting_review` and workflow rules as `workflow_control`.
+- **Command / Procedure**: `REG-05` in `/api/test-fdr-engine`.
+- **Observed Result**: Anti-embezzlement circular marked `draft_awaiting_review`; Senior Officer decision marked `workflow_control`.
+
+### Check 3B.6: REG-06 — Uploaded Deposit Advice Reassessment
+- **Status**: [x] PASS
+- **What was tested**: Joint Holder "Not Applicable" evaluated as an operational manual-review check rather than a confirmed statutory violation.
+- **Command / Procedure**: `REG-06` in `/api/test-fdr-engine`.
+- **Observed Result**: Document classified as `conditionally_suitable`; rationale designates Joint Holder NA as an operational check for a separate bank lien letter.
+
+### Check 3B.7: REG-07 — Instrument Authenticity Independence
+- **Status**: [x] PASS
+- **What was tested**: Instrument authenticity remains `manual_confirmation_pending` despite successful regex/PDF extraction.
+- **Command / Procedure**: `REG-07` in `/api/test-fdr-engine`.
+- **Observed Result**: Authenticity is never marked bank-verified without authorized bank branch / channel verification record.
 
 ---
 

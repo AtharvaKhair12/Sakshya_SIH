@@ -620,6 +620,7 @@ export const REQUIREMENT_STATUS_LABELS: Record<RequirementStatus, string> = {
 
 export interface RequirementEvaluation {
   ruleId: string;
+  legacyRuleId?: string;
   clauseRef: string;
   title: string;
   status: RequirementStatus;

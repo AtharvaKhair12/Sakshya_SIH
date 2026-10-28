@@ -1,7 +1,10 @@
 // ============================================================================
 // Sakshya PS 1 — Source-Grounded Regulatory Rule Engine
 // Authoritative rules grounded in AICTE Approval Process Handbook (APH 2024–2027)
-// Specifically Clause 6.46 (Release of Security Deposit / FDR) and Clause 1.4
+// Specifically Clause 6.46 (Release of Security Deposit / FDR: 6.46.a(1-4), 6.46.b),
+// Chapter I, Section 1.4 (Table 1.4 - Deposit Norms), and Chapter III (Closure Norms).
+// Note: Internal workflow controls and administrative guidelines are explicitly
+// distinguished from statutory handbook clauses.
 // Official Source: https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf
 // ============================================================================
 
@@ -10,8 +13,16 @@ import {
   ComplianceFinding, Role, RuleSeverity, RequirementEvaluation, RequirementStatus
 } from './types';
 
+export type RegulatoryReviewStatus =
+  | 'official_verified'
+  | 'draft_awaiting_review'
+  | 'illustrative_demo'
+  | 'superseded'
+  | 'workflow_control';
+
 export interface GroundedRegulatoryRule {
-  id: string;
+  id: string; // Stable internal rule ID (e.g. 'RULE-REL-REQ-01')
+  legacyId?: string; // Legacy ID (e.g. 'RULE-APH-6.46.1') for backwards compatibility
   code: string;
   title: string;
   category: 'Release Workflow' | 'Document Suitability' | 'Maturity & Tenor' | 'Clearance & Vigilance' | 'Continuity & Replacement';
@@ -24,7 +35,7 @@ export interface GroundedRegulatoryRule {
   applicabilityCondition: string;
   requiredEvidence: string;
   severity: RuleSeverity;
-  reviewStatus: 'official_verified' | 'draft_awaiting_review' | 'illustrative_demo' | 'superseded';
+  reviewStatus: RegulatoryReviewStatus;
   reviewedBy: string;
   lastReviewedDate: string;
   version: number;
@@ -43,29 +54,30 @@ export interface RuleEvaluationContext {
 }
 
 // ----------------------------------------------------------------------------
-// Official Grounded Rules (AICTE APH 2024–2027)
+// Official Grounded Rules & Internal Workflow Controls
 // ----------------------------------------------------------------------------
 
 export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
-  // 1. Formal Application Letter
+  // 1. Formal Application Letter — Clause 6.46.a(1)
   {
-    id: 'RULE-APH-6.46.1',
-    code: 'APH-6.46.1',
+    id: 'RULE-REL-REQ-01',
+    legacyId: 'RULE-APH-6.46.1',
+    code: 'REL-REQ-01',
     title: 'Formal Institution Release Application Letter',
     category: 'Release Workflow',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.1 & Appendix 8',
-    pageReference: 'Clause 6.46 (pp. 112–114)',
-    description: 'Institution must submit an official application on official letterhead duly signed by the Chairman/President or authorized signatory of the Trust/Society/Company requesting release of FDR/RPGF.',
+    clauseReference: 'Clause 6.46.a(1)',
+    pageReference: 'Chapter VI, Clause 6.46.a(1) (pp. 112–114)',
+    description: 'Institution must submit an official application on official letterhead duly signed by the Chairman/President or authorized signatory of the Trust/Society/Company requesting release of Security Deposit / FDR.',
     applicabilityCondition: 'Mandatory for all FDR release and security deposit refund requests.',
     requiredEvidence: 'Document classified as "release_request_letter" or formal application upload.',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const hasLetter = ctx.documents.some(d =>
         d.documentType === 'application_form' ||
@@ -76,8 +88,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (hasLetter) {
         return {
-          ruleId: 'RULE-APH-6.46.1',
-          clauseRef: 'Clause 6.46.1',
+          ruleId: 'RULE-REL-REQ-01',
+          legacyRuleId: 'RULE-APH-6.46.1',
+          clauseRef: 'Clause 6.46.a(1)',
           title: 'Formal Institution Release Application Letter',
           status: 'satisfied',
           explanation: 'Formal release application letter is present in submitted case documentation.',
@@ -89,8 +102,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.1',
-        clauseRef: 'Clause 6.46.1',
+        ruleId: 'RULE-REL-REQ-01',
+        legacyRuleId: 'RULE-APH-6.46.1',
+        clauseRef: 'Clause 6.46.a(1)',
         title: 'Formal Institution Release Application Letter',
         status: 'missing',
         explanation: 'Official application letter from Chairman/President requesting FDR release is not attached to this case file.',
@@ -101,25 +115,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 2. Notarized Affidavit 6
+  // 2. Notarized Affidavit 6 — Clause 6.46.a(2) & Appendix 8
   {
-    id: 'RULE-APH-6.46.2',
-    code: 'APH-6.46.2',
+    id: 'RULE-REL-AFF-02',
+    legacyId: 'RULE-APH-6.46.2',
+    code: 'REL-AFF-02',
     title: 'Notarized Affidavit 6 Declaration with FDR/RTGS Schedule',
     category: 'Release Workflow',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.2 & Appendix 8 (Affidavit 6)',
-    pageReference: 'Appendix 8, Format Affidavit 6',
-    description: 'Submission of Affidavit 6 on non-judicial stamp paper, duly sworn before a First Class Judicial Magistrate or Public Notary, detailing Trust/Society particulars, FDR receipt numbers, and certifying zero outstanding dues to students or faculty.',
+    clauseReference: 'Clause 6.46.a(2) & Appendix 8 (Affidavit 6)',
+    pageReference: 'Chapter VI, Clause 6.46.a(2) & Appendix 8, Format Affidavit 6',
+    description: 'Submission of Affidavit 6 on non-judicial stamp paper, duly sworn before a First Class Judicial Magistrate or Public Notary, detailing Trust/Society particulars, FDR receipt numbers, and certifying zero outstanding dues to students, faculty, or staff.',
     applicabilityCondition: 'Mandatory for all release/refund workflows prior to scrutiny sign-off.',
     requiredEvidence: 'Document classified as "affidavit" or containing notarized Affidavit 6 structure.',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const hasAffidavit = ctx.documents.some(d =>
         d.documentType === 'affidavit' ||
@@ -129,8 +144,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (hasAffidavit) {
         return {
-          ruleId: 'RULE-APH-6.46.2',
-          clauseRef: 'Clause 6.46.2',
+          ruleId: 'RULE-REL-AFF-02',
+          legacyRuleId: 'RULE-APH-6.46.2',
+          clauseRef: 'Clause 6.46.a(2)',
           title: 'Notarized Affidavit 6 Declaration with FDR Schedule',
           status: 'satisfied',
           explanation: 'Statutory Affidavit 6 is attached and verified in the case file.',
@@ -142,8 +158,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.2',
-        clauseRef: 'Clause 6.46.2',
+        ruleId: 'RULE-REL-AFF-02',
+        legacyRuleId: 'RULE-APH-6.46.2',
+        clauseRef: 'Clause 6.46.a(2)',
         title: 'Notarized Affidavit 6 Declaration with FDR Schedule',
         status: 'missing',
         explanation: 'Affidavit 6 (Statutory Release Declaration) not found in the case record. Case cannot proceed to Senior Officer decision.',
@@ -154,25 +171,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 3. Original FDR / Deposit Advice Document Suitability
+  // 3. Original FDR / Deposit Advice / Payment Proof — Clause 6.46.a(3)
   {
-    id: 'RULE-APH-6.46.3',
-    code: 'APH-6.46.3',
+    id: 'RULE-REL-FDR-03',
+    legacyId: 'RULE-APH-6.46.3',
+    code: 'REL-FDR-03',
     title: 'Copy of FDR or Bank Deposit Advice Suitability',
     category: 'Document Suitability',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.3 & Clause 1.4.5',
-    pageReference: 'Clause 6.46.3',
-    description: 'Original FDR or Bank Deposit Advice evidencing the security deposit creation and joint pledging to Regional Officer, AICTE. Note: A bank document titled "Deposit Advice" is acceptable as valid evidence of deposit creation, but requires scrutiny review for completeness and subsequent post-maturity renewal confirmation.',
+    clauseReference: 'Clause 6.46.a(3)',
+    pageReference: 'Chapter VI, Clause 6.46.a(3)',
+    description: 'Submission of copy of the Fixed Deposit Receipt (FDR), Demand Draft, or online payment receipt evidencing creation of the Security Deposit. Note: A bank document titled "Deposit Advice" is acceptable as valid evidence of deposit creation under Clause 6.46.a(3), but requires scrutiny review for completeness and subsequent post-maturity renewal confirmation.',
     applicabilityCondition: 'Mandatory proof of instrument creation for all verification and release operations.',
-    requiredEvidence: 'Document classified as "fdr_certificate" or "deposit_advice" or "bank_letter".',
+    requiredEvidence: 'Document classified as "fdr_certificate" or "deposit_advice" or "payment_proof".',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const fdrDoc = ctx.documents.find(d =>
         d.documentType === 'fdr_certificate' ||
@@ -183,8 +201,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (!fdrDoc) {
         return {
-          ruleId: 'RULE-APH-6.46.3',
-          clauseRef: 'Clause 6.46.3',
+          ruleId: 'RULE-REL-FDR-03',
+          legacyRuleId: 'RULE-APH-6.46.3',
+          clauseRef: 'Clause 6.46.a(3)',
           title: 'Copy of FDR or Bank Deposit Advice Suitability',
           status: 'missing',
           explanation: 'No FDR Certificate or Bank Deposit Advice found in the document dossier.',
@@ -198,11 +217,12 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (isAdvice) {
         return {
-          ruleId: 'RULE-APH-6.46.3',
-          clauseRef: 'Clause 6.46.3',
+          ruleId: 'RULE-REL-FDR-03',
+          legacyRuleId: 'RULE-APH-6.46.3',
+          clauseRef: 'Clause 6.46.a(3)',
           title: 'Copy of FDR or Bank Deposit Advice Suitability',
           status: 'satisfied',
-          explanation: 'Document classified as "Bank Deposit Advice". Suitability assessment: Acceptable as evidence of deposit creation; requires scrutiny review and branch verification.',
+          explanation: 'Document classified as "Bank Deposit Advice". Suitability assessment: Acceptable as evidence of deposit creation under Clause 6.46.a(3); requires scrutiny review and branch verification.',
           evidenceReference: `Deposit Advice: ${fdrDoc.fileName}`,
           responsibleRole: 'scrutiny_officer',
           severity: 'info',
@@ -211,8 +231,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.3',
-        clauseRef: 'Clause 6.46.3',
+        ruleId: 'RULE-REL-FDR-03',
+        legacyRuleId: 'RULE-APH-6.46.3',
+        clauseRef: 'Clause 6.46.a(3)',
         title: 'Copy of FDR or Bank Deposit Advice Suitability',
         status: 'satisfied',
         explanation: 'FDR Certificate is present and verified for basic structural compliance.',
@@ -224,25 +245,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 4. Latest LoA / EoA
+  // 4. Latest LoA / EoA — Clause 6.46.a(4)
   {
-    id: 'RULE-APH-6.46.4',
-    code: 'APH-6.46.4',
+    id: 'RULE-REL-EOA-04',
+    legacyId: 'RULE-APH-6.46.4',
+    code: 'REL-EOA-04',
     title: 'Latest Letter of Approval (LoA) / Extension of Approval (EoA)',
     category: 'Release Workflow',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.4',
-    pageReference: 'Clause 6.46.4',
+    clauseReference: 'Clause 6.46.a(4)',
+    pageReference: 'Chapter VI, Clause 6.46.a(4)',
     description: 'Copy of the latest Extension of Approval (EoA) or Letter of Approval issued by AICTE verifying continuous approval status or closure authorization.',
     applicabilityCondition: 'Mandatory to substantiate regulatory standing of the applicant institution.',
     requiredEvidence: 'Document classified as "eoa_loa" or official approval letter upload.',
     severity: 'error',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const hasEoa = ctx.documents.some(d =>
         d.fileName.toLowerCase().includes('eoa') ||
@@ -252,8 +274,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (hasEoa) {
         return {
-          ruleId: 'RULE-APH-6.46.4',
-          clauseRef: 'Clause 6.46.4',
+          ruleId: 'RULE-REL-EOA-04',
+          legacyRuleId: 'RULE-APH-6.46.4',
+          clauseRef: 'Clause 6.46.a(4)',
           title: 'Latest Letter of Approval (LoA) / Extension of Approval (EoA)',
           status: 'satisfied',
           explanation: 'Latest AICTE approval order (EoA/LoA) is attached to the case file.',
@@ -265,8 +288,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.4',
-        clauseRef: 'Clause 6.46.4',
+        ruleId: 'RULE-REL-EOA-04',
+        legacyRuleId: 'RULE-APH-6.46.4',
+        clauseRef: 'Clause 6.46.a(4)',
         title: 'Latest Letter of Approval (LoA) / Extension of Approval (EoA)',
         status: 'missing',
         explanation: 'Latest EoA / LoA document not found in the case record. Request from institution.',
@@ -277,25 +301,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 5. Internal Cell Clearances (PGRC, Vigilance, Legal)
+  // 5. Internal Cell Clearances (PGRC, Vigilance, Regional Office) — Clause 6.46.b
   {
-    id: 'RULE-APH-6.46.5',
-    code: 'APH-6.46.5',
+    id: 'RULE-REL-CLR-05',
+    legacyId: 'RULE-APH-6.46.5',
+    code: 'REL-CLR-05',
     title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
     category: 'Clearance & Vigilance',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.5',
-    pageReference: 'Clause 6.46.5',
-    description: 'Clearances must be confirmed from Public Grievance Redressal Cell (PGRC), Vigilance Bureau, Legal Bureau, and Regional Office confirming zero pending student/faculty liabilities or judicial injunctions.',
+    clauseReference: 'Clause 6.46.b',
+    pageReference: 'Chapter VI, Clause 6.46.b',
+    description: 'Clearances must be confirmed from Public Grievance Redressal Cell (PGRC), Vigilance Bureau, Legal Bureau, and Regional Office confirming zero pending student/faculty liabilities, inquiries, or judicial injunctions.',
     applicabilityCondition: 'Mandatory administrative clearance prior to Senior Officer approval.',
     requiredEvidence: 'Internal clearance record logged by authorized scrutiny or cell officer.',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const clearanceDoc = ctx.documents.some(d =>
         d.fileName.toLowerCase().includes('clearance') ||
@@ -309,8 +334,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (clearanceDoc || observationClear) {
         return {
-          ruleId: 'RULE-APH-6.46.5',
-          clauseRef: 'Clause 6.46.5',
+          ruleId: 'RULE-REL-CLR-05',
+          legacyRuleId: 'RULE-APH-6.46.5',
+          clauseRef: 'Clause 6.46.b',
           title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
           status: 'satisfied',
           explanation: 'Bureau and cell clearances (PGRC, Vigilance, Regional Office) recorded and verified.',
@@ -322,8 +348,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.5',
-        clauseRef: 'Clause 6.46.5',
+        ruleId: 'RULE-REL-CLR-05',
+        legacyRuleId: 'RULE-APH-6.46.5',
+        clauseRef: 'Clause 6.46.b',
         title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
         status: 'awaiting_confirmation',
         explanation: 'Clearance record from PGRC / Vigilance Cell is not recorded in the available system data. (Note: Missing record means clearance is unrecorded, not that it was rejected).',
@@ -334,25 +361,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 6. Mandatory Tenor & Post-Maturity Renewal Intelligence
+  // 6. Mandatory 10-Year Security Deposit Retention & Renewal Verification — Table 1.4 & Clause 6.46
   {
-    id: 'RULE-APH-6.46.6',
-    code: 'APH-6.46.6',
-    title: 'Mandatory 8–10 Year Tenor & Actual Renewal Evidence Audit',
+    id: 'RULE-REL-TENOR-06',
+    legacyId: 'RULE-APH-6.46.6',
+    code: 'REL-TENOR-06',
+    title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
     category: 'Maturity & Tenor',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 1.4.1 (Table 1.1) & Clause 6.46.6',
-    pageReference: 'Clause 1.4.1 & 6.46.6',
-    description: 'Security Deposit must be maintained for the mandatory statutory tenor (typically 8–10 years). If maturity date has passed, an auto-renewal clause in an old deposit advice is NOT proof of actual renewal; updated renewal receipt or current bank statement is mandatory.',
+    clauseReference: 'Chapter I, Section 1.4 (Table 1.4) & Clause 6.46',
+    pageReference: 'Chapter I, Table 1.4 & Chapter VI, Clause 6.46',
+    description: 'Security Deposit must be maintained for the mandatory statutory tenor of 10 years (or applicable term specified in Table 1.4) and returned on completion of the term subject to Clause 6.46 conditions. If maturity date has passed, an auto-renewal clause in an old deposit advice is NOT proof of actual renewal; updated renewal receipt or current bank statement is mandatory.',
     applicabilityCondition: 'Applicable to all maturing or release-seeking instruments.',
     requiredEvidence: 'Instrument maturity date & renewal proof where maturity date is in the past.',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const now = ctx.currentDate || new Date();
       const matDate = new Date(ctx.instrument.maturityDate);
@@ -360,9 +388,10 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (!isPastMaturity) {
         return {
-          ruleId: 'RULE-APH-6.46.6',
-          clauseRef: 'Clause 6.46.6',
-          title: 'Mandatory 8–10 Year Tenor & Actual Renewal Evidence Audit',
+          ruleId: 'RULE-REL-TENOR-06',
+          legacyRuleId: 'RULE-APH-6.46.6',
+          clauseRef: 'Table 1.4 & Clause 6.46',
+          title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
           status: 'satisfied',
           explanation: `Instrument is within active tenor (Maturity Date: ${ctx.instrument.maturityDate}). No overdue maturity condition exists.`,
           evidenceReference: `Maturity Date: ${ctx.instrument.maturityDate}`,
@@ -381,9 +410,10 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (hasRenewalEvidence) {
         return {
-          ruleId: 'RULE-APH-6.46.6',
-          clauseRef: 'Clause 6.46.6',
-          title: 'Mandatory 8–10 Year Tenor & Actual Renewal Evidence Audit',
+          ruleId: 'RULE-REL-TENOR-06',
+          legacyRuleId: 'RULE-APH-6.46.6',
+          clauseRef: 'Table 1.4 & Clause 6.46',
+          title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
           status: 'satisfied',
           explanation: 'Maturity date passed, but valid renewal / replacement evidence is recorded and under monitoring.',
           evidenceReference: 'Renewal / replacement evidence verified.',
@@ -394,9 +424,10 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.6',
-        clauseRef: 'Clause 6.46.6',
-        title: 'Mandatory 8–10 Year Tenor & Actual Renewal Evidence Audit',
+        ruleId: 'RULE-REL-TENOR-06',
+        legacyRuleId: 'RULE-APH-6.46.6',
+        clauseRef: 'Table 1.4 & Clause 6.46',
+        title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
         status: 'stale',
         explanation: `Maturity date (${ctx.instrument.maturityDate}) has passed. Notice: Auto-renewal instructions in historical documents do NOT establish that renewal occurred. Updated bank renewal confirmation is required.`,
         responsibleRole: 'institution',
@@ -406,30 +437,32 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 7. Progressive Closure Exemption Certificate
+  // 7. Progressive Closure Exemption Certificate — Chapter III & Clause 6.46
   {
-    id: 'RULE-APH-6.46.7',
-    code: 'APH-6.46.7',
+    id: 'RULE-REL-CLOSE-07',
+    legacyId: 'RULE-APH-6.46.7',
+    code: 'REL-CLOSE-07',
     title: 'Progressive / Complete Institutional Closure Certificate Exemption',
     category: 'Release Workflow',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.7 & Chapter III (Closure Guidelines)',
-    pageReference: 'Clause 6.46.7',
-    description: 'In cases of pre-tenor release under Progressive Closure, a valid Progressive Closure Certificate from the affiliating University and State DTE confirming zero remaining enrolled students is required before pre-tenor release can be authorized.',
+    clauseReference: 'Chapter III (Closure Guidelines) & Clause 6.46',
+    pageReference: 'Chapter III & Chapter VI, Clause 6.46',
+    description: 'In cases of pre-tenor release under Progressive Closure or Complete Institutional Closure, a valid Progressive Closure Certificate from the affiliating University and State DTE confirming zero remaining enrolled students is required before pre-tenor release can be authorized.',
     applicabilityCondition: 'Conditional: Applies only when progressive closure or institutional merger scenario is invoked.',
     requiredEvidence: 'Progressive closure certificate with zero enrolled student confirmation.',
     severity: 'error',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 1,
+    lastReviewedDate: '2026-10-28',
+    version: 2,
     evaluate: (ctx) => {
       if (!ctx.isProgressiveClosure) {
         return {
-          ruleId: 'RULE-APH-6.46.7',
-          clauseRef: 'Clause 6.46.7',
+          ruleId: 'RULE-REL-CLOSE-07',
+          legacyRuleId: 'RULE-APH-6.46.7',
+          clauseRef: 'Chapter III & Clause 6.46',
           title: 'Progressive Closure Certificate Exemption',
           status: 'not_applicable',
           explanation: 'Case is under standard tenor release; progressive closure exemption not invoked.',
@@ -446,8 +479,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (hasClosureCert) {
         return {
-          ruleId: 'RULE-APH-6.46.7',
-          clauseRef: 'Clause 6.46.7',
+          ruleId: 'RULE-REL-CLOSE-07',
+          legacyRuleId: 'RULE-APH-6.46.7',
+          clauseRef: 'Chapter III & Clause 6.46',
           title: 'Progressive Closure Certificate Exemption',
           status: 'satisfied',
           explanation: 'Progressive Closure Certificate from affiliating University verified.',
@@ -459,8 +493,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.7',
-        clauseRef: 'Clause 6.46.7',
+        ruleId: 'RULE-REL-CLOSE-07',
+        legacyRuleId: 'RULE-APH-6.46.7',
+        clauseRef: 'Chapter III & Clause 6.46',
         title: 'Progressive Closure Certificate Exemption',
         status: 'missing',
         explanation: 'Progressive closure scenario invoked, but University Progressive Closure Certificate is missing from case record.',
@@ -471,38 +506,40 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 8. Anti-Embezzlement Special Inquiry State NOC
+  // 8. Anti-Embezzlement Special Inquiry State NOC — Administrative Circular (Under Review)
   {
-    id: 'RULE-APH-6.46.8',
-    code: 'APH-6.46.8',
+    id: 'RULE-REL-VIG-08',
+    legacyId: 'RULE-APH-6.46.8',
+    code: 'REL-VIG-08',
     title: 'Anti-Embezzlement Inquiry State Government Clearance',
     category: 'Clearance & Vigilance',
-    sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
+    sourceDocument: 'AICTE Vigilance Guidelines & Administrative Circulars',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.8 & Vigilance Circular',
-    pageReference: 'Clause 6.46.8',
+    clauseReference: 'AICTE Vigilance Guidelines (Administrative Circular)',
+    pageReference: 'AICTE Vigilance Bureau Standard Operating Procedure',
     description: 'Where financial irregularity, fraud investigation, or embezzlement allegations are flagged against the Trust/Institution, specific No Objection from the State Higher Education Department is mandatory before refund processing.',
     applicabilityCondition: 'Conditional: Applies only when financial discrepancy or vigilance inquiry flag is active.',
     requiredEvidence: 'State Government Higher Education Directorate NOC.',
     severity: 'critical',
-    reviewStatus: 'official_verified',
-    reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 1,
+    reviewStatus: 'draft_awaiting_review',
+    reviewedBy: 'AICTE Vigilance Review Taskforce',
+    lastReviewedDate: '2026-10-28',
+    version: 2,
     evaluate: (ctx) => {
       const hasDiscrepancy = ctx.hasEmbezzlementInquiry || ctx.instrument.status === 'discrepancy_flagged';
 
       if (!hasDiscrepancy) {
         return {
-          ruleId: 'RULE-APH-6.46.8',
-          clauseRef: 'Clause 6.46.8',
+          ruleId: 'RULE-REL-VIG-08',
+          legacyRuleId: 'RULE-APH-6.46.8',
+          clauseRef: 'Vigilance Circular (Admin)',
           title: 'Anti-Embezzlement Inquiry State Government Clearance',
           status: 'not_applicable',
           explanation: 'No financial embezzlement inquiry or discrepancy investigation flagged for this institution.',
           responsibleRole: 'scrutiny_officer',
           severity: 'info',
-          isOfficialRule: true,
+          isOfficialRule: false,
         };
       }
 
@@ -513,149 +550,159 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
 
       if (hasStateNoc) {
         return {
-          ruleId: 'RULE-APH-6.46.8',
-          clauseRef: 'Clause 6.46.8',
+          ruleId: 'RULE-REL-VIG-08',
+          legacyRuleId: 'RULE-APH-6.46.8',
+          clauseRef: 'Vigilance Circular (Admin)',
           title: 'Anti-Embezzlement Inquiry State Government Clearance',
           status: 'satisfied',
           explanation: 'State Directorate NOC clearing financial inquiry has been submitted and reviewed.',
           evidenceReference: 'State NOC verified in case file.',
           responsibleRole: 'senior_officer',
           severity: 'critical',
-          isOfficialRule: true,
+          isOfficialRule: false,
         };
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.8',
-        clauseRef: 'Clause 6.46.8',
+        ruleId: 'RULE-REL-VIG-08',
+        legacyRuleId: 'RULE-APH-6.46.8',
+        clauseRef: 'Vigilance Circular (Admin)',
         title: 'Anti-Embezzlement Inquiry State Government Clearance',
         status: 'awaiting_confirmation',
         explanation: 'Financial discrepancy flagged on record. Release requires official No Objection Certificate from State Government Directorate.',
         responsibleRole: 'scrutiny_officer',
         severity: 'critical',
-        isOfficialRule: true,
+        isOfficialRule: false,
       };
     },
   },
 
-  // 9. Competent Senior Officer Reasoned Sign-off
+  // 9. Competent Senior Officer Reasoned Sign-off — Internal Governance Workflow Control
   {
-    id: 'RULE-APH-6.46.9',
-    code: 'APH-6.46.9',
+    id: 'RULE-WORKFLOW-DECISION-09',
+    legacyId: 'RULE-APH-6.46.9',
+    code: 'WORKFLOW-DECISION-09',
     title: 'Competent Authority Reasoned Decision & Audit Trail Sign-Off',
     category: 'Release Workflow',
-    sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
+    sourceDocument: 'Sakshya Portal Internal Governance Architecture & Workflow Control',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.9 & Clause 2.8',
-    pageReference: 'Clause 6.46.9',
-    description: 'Final release decision or Sanction Order can only be authorized by a Senior Officer / Competent Authority with mandatory documented rationale. The system must never automatically approve or reject release requests.',
-    applicabilityCondition: 'Mandatory for all final release status transitions.',
+    clauseReference: 'Sakshya Internal Governance & Workflow Control',
+    pageReference: 'Sakshya Operating Guidelines, Section 4.2',
+    description: 'Final release decision or Sanction Order can only be authorized by a Senior Officer / Competent Authority with mandatory documented rationale. The system must never automatically approve or reject release requests. (Internal workflow control, not a statutory APH clause).',
+    applicabilityCondition: 'Mandatory workflow control for all final release status transitions.',
     requiredEvidence: 'Senior officer authorized decision record with mandatory justification.',
     severity: 'critical',
-    reviewStatus: 'official_verified',
-    reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    reviewStatus: 'workflow_control',
+    reviewedBy: 'Sakshya System Architecture Review Team',
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       if (!ctx.releaseRequest) {
         return {
-          ruleId: 'RULE-APH-6.46.9',
-          clauseRef: 'Clause 6.46.9',
+          ruleId: 'RULE-WORKFLOW-DECISION-09',
+          legacyRuleId: 'RULE-APH-6.46.9',
+          clauseRef: 'Internal Workflow Control',
           title: 'Competent Authority Reasoned Decision Sign-Off',
           status: 'not_applicable',
           explanation: 'No release request has been submitted for this instrument yet.',
           responsibleRole: 'senior_officer',
           severity: 'info',
-          isOfficialRule: true,
+          isOfficialRule: false,
         };
       }
 
       if (ctx.releaseRequest.seniorDecision && ctx.releaseRequest.seniorDecisionReason) {
         return {
-          ruleId: 'RULE-APH-6.46.9',
-          clauseRef: 'Clause 6.46.9',
+          ruleId: 'RULE-WORKFLOW-DECISION-09',
+          legacyRuleId: 'RULE-APH-6.46.9',
+          clauseRef: 'Internal Workflow Control',
           title: 'Competent Authority Reasoned Decision Sign-Off',
           status: 'satisfied',
           explanation: `Authorized decision (${ctx.releaseRequest.seniorDecision}) recorded by Senior Officer with documented rationale.`,
           evidenceReference: `Decision: ${ctx.releaseRequest.seniorDecision} · Officer: ${ctx.releaseRequest.seniorOfficerId || 'Authorized Signatory'}`,
           responsibleRole: 'senior_officer',
           severity: 'critical',
-          isOfficialRule: true,
+          isOfficialRule: false,
         };
       }
 
       return {
-        ruleId: 'RULE-APH-6.46.9',
-        clauseRef: 'Clause 6.46.9',
+        ruleId: 'RULE-WORKFLOW-DECISION-09',
+        legacyRuleId: 'RULE-APH-6.46.9',
+        clauseRef: 'Internal Workflow Control',
         title: 'Competent Authority Reasoned Decision Sign-Off',
         status: 'awaiting_confirmation',
         explanation: 'Pending Senior Officer review. Mandatory documented justification is required before release sanction order generation.',
         responsibleRole: 'senior_officer',
         severity: 'critical',
-        isOfficialRule: true,
+        isOfficialRule: false,
       };
     },
   },
 
-  // 10. Replacement Continuity & Chain Integrity
+  // 10. Replacement Continuity & Predecessor Linking Protocol — Internal Operational Workflow Control
   {
-    id: 'RULE-APH-1.4.6',
-    code: 'APH-1.4.6',
+    id: 'RULE-WORKFLOW-REPLACE-10',
+    legacyId: 'RULE-APH-1.4.6',
+    code: 'WORKFLOW-REPLACE-10',
     title: 'Replacement Instrument Continuity & Predecessor Linking Protocol',
     category: 'Continuity & Replacement',
-    sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
+    sourceDocument: 'Sakshya Portal Operational Continuity Standards',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 1.4.6',
-    pageReference: 'Clause 1.4.6',
-    description: 'When an FDR approaches or passes maturity, a replacement instrument must explicitly link to its predecessor without discharging the existing deposit until full verification of the replacement is complete.',
-    applicabilityCondition: 'Mandatory whenever replacement or renewal instrument is submitted.',
+    clauseReference: 'Sakshya Internal Workflow Control (Predecessor-Replacement Tracking)',
+    pageReference: 'Sakshya Operational Guidelines, Section 3.1',
+    description: 'When an FDR approaches or passes maturity, a replacement instrument must explicitly link to its predecessor without discharging the existing deposit until full verification of the replacement is complete. (Internal operational protocol for chain integrity, not a statutory APH clause).',
+    applicabilityCondition: 'Mandatory workflow control whenever replacement or renewal instrument is submitted.',
     requiredEvidence: 'Explicit linkedPredecessorId linking the replacement to its originating instrument.',
     severity: 'error',
-    reviewStatus: 'official_verified',
-    reviewedBy: 'AICTE Regulatory Affairs Review Team',
-    lastReviewedDate: '2026-10-27',
-    version: 2,
+    reviewStatus: 'workflow_control',
+    reviewedBy: 'Sakshya System Architecture Review Team',
+    lastReviewedDate: '2026-10-28',
+    version: 3,
     evaluate: (ctx) => {
       const isReplacement = ctx.instrument.status === 'replacement_submitted' || ctx.instrument.linkedPredecessorId;
 
       if (!isReplacement) {
         return {
-          ruleId: 'RULE-APH-1.4.6',
-          clauseRef: 'Clause 1.4.6',
+          ruleId: 'RULE-WORKFLOW-REPLACE-10',
+          legacyRuleId: 'RULE-APH-1.4.6',
+          clauseRef: 'Internal Workflow Control',
           title: 'Replacement Instrument Continuity Protocol',
           status: 'not_applicable',
           explanation: 'Standard instrument creation; not registered as a replacement.',
           responsibleRole: 'scrutiny_officer',
           severity: 'info',
-          isOfficialRule: true,
+          isOfficialRule: false,
         };
       }
 
       if (ctx.instrument.linkedPredecessorId) {
         return {
-          ruleId: 'RULE-APH-1.4.6',
-          clauseRef: 'Clause 1.4.6',
+          ruleId: 'RULE-WORKFLOW-REPLACE-10',
+          legacyRuleId: 'RULE-APH-1.4.6',
+          clauseRef: 'Internal Workflow Control',
           title: 'Replacement Instrument Continuity Protocol',
           status: 'satisfied',
           explanation: `Replacement is linked to predecessor record ${ctx.instrument.linkedPredecessorId}. Continuity chain established.`,
           evidenceReference: `Predecessor: ${ctx.instrument.linkedPredecessorId}`,
           responsibleRole: 'scrutiny_officer',
           severity: 'info',
-          isOfficialRule: true,
+          isOfficialRule: false,
         };
       }
 
       return {
-        ruleId: 'RULE-APH-1.4.6',
-        clauseRef: 'Clause 1.4.6',
+        ruleId: 'RULE-WORKFLOW-REPLACE-10',
+        legacyRuleId: 'RULE-APH-1.4.6',
+        clauseRef: 'Internal Workflow Control',
         title: 'Replacement Instrument Continuity Protocol',
         status: 'inconsistent',
         explanation: 'Instrument submitted as replacement, but originating predecessor instrument ID is unlinked. Link required before verification can proceed.',
         responsibleRole: 'institution',
         severity: 'error',
-        isOfficialRule: true,
+        isOfficialRule: false,
       };
     },
   },
@@ -666,4 +713,11 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
  */
 export function evaluateAllRegulatoryRules(ctx: RuleEvaluationContext): RequirementEvaluation[] {
   return AICTE_REGULATORY_RULES.map(rule => rule.evaluate(ctx));
+}
+
+/**
+ * Finds a rule by its stable internal ID or legacy ID.
+ */
+export function findRule(idOrLegacyId: string): GroundedRegulatoryRule | undefined {
+  return AICTE_REGULATORY_RULES.find(r => r.id === idOrLegacyId || r.legacyId === idOrLegacyId);
 }

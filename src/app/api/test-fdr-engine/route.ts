@@ -223,21 +223,27 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const req1 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.1');
-    const req2 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.2');
-    const req3 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.3');
-    const req4 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.4');
-    const req5 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.5');
+    const req1 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-REQ-01' || r.legacyRuleId === 'RULE-APH-6.46.1');
+    const req2 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-AFF-02' || r.legacyRuleId === 'RULE-APH-6.46.2');
+    const req3 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-FDR-03' || r.legacyRuleId === 'RULE-APH-6.46.3');
+    const req4 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-EOA-04' || r.legacyRuleId === 'RULE-APH-6.46.4');
+    const req5 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-CLR-05' || r.legacyRuleId === 'RULE-APH-6.46.5');
 
-    if (req1?.status !== 'satisfied') throw new Error(`Rule 6.46.1 not satisfied: got ${req1?.status}`);
-    if (req2?.status !== 'satisfied') throw new Error(`Rule 6.46.2 not satisfied: got ${req2?.status}`);
-    if (req3?.status !== 'satisfied') throw new Error(`Rule 6.46.3 not satisfied: got ${req3?.status}`);
-    if (req4?.status !== 'satisfied') throw new Error(`Rule 6.46.4 not satisfied: got ${req4?.status}`);
-    if (req5?.status !== 'satisfied') throw new Error(`Rule 6.46.5 not satisfied: got ${req5?.status}`);
+    if (req1?.status !== 'satisfied') throw new Error(`Rule 6.46.a(1) not satisfied: got ${req1?.status}`);
+    if (req2?.status !== 'satisfied') throw new Error(`Rule 6.46.a(2) not satisfied: got ${req2?.status}`);
+    if (req3?.status !== 'satisfied') throw new Error(`Rule 6.46.a(3) not satisfied: got ${req3?.status}`);
+    if (req4?.status !== 'satisfied') throw new Error(`Rule 6.46.a(4) not satisfied: got ${req4?.status}`);
+    if (req5?.status !== 'satisfied') throw new Error(`Rule 6.46.b not satisfied: got ${req5?.status}`);
+
+    if (req1.clauseRef !== 'Clause 6.46.a(1)') throw new Error(`Expected Clause 6.46.a(1), got ${req1.clauseRef}`);
+    if (!req2.clauseRef.includes('6.46.a(2)')) throw new Error(`Expected Clause 6.46.a(2), got ${req2.clauseRef}`);
+    if (req3.clauseRef !== 'Clause 6.46.a(3)') throw new Error(`Expected Clause 6.46.a(3), got ${req3.clauseRef}`);
+    if (req4.clauseRef !== 'Clause 6.46.a(4)') throw new Error(`Expected Clause 6.46.a(4), got ${req4.clauseRef}`);
+    if (req5.clauseRef !== 'Clause 6.46.b') throw new Error(`Expected Clause 6.46.b, got ${req5.clauseRef}`);
   });
 
   // Fixture 2: Missing Request Letter
-  recordTest('Regulatory Rules', 'FIXTURE-02', 'Missing Request Letter triggers RULE-APH-6.46.1 missing blocker', () => {
+  recordTest('Regulatory Rules', 'FIXTURE-02', 'Missing Request Letter triggers RULE-REL-REQ-01 missing blocker', () => {
     const docsWithoutReq = [validAffidavitDoc, validFdrDoc, validEoaDoc];
     const assessment = computeCaseAssessment({
       instrument: baseInstrument,
@@ -247,19 +253,19 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const req1 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.1');
-    if (req1?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.1, got ${req1?.status}`);
+    const req1 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-REQ-01' || r.legacyRuleId === 'RULE-APH-6.46.1');
+    if (req1?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(1), got ${req1?.status}`);
 
     const hasBlocker = assessment.q2_unresolvedDependencies.some(d => d.includes('Formal Institution Release Application Letter'));
-    if (!hasBlocker) throw new Error('Expected unresolved dependency for RULE-APH-6.46.1 in Q2');
+    if (!hasBlocker) throw new Error('Expected unresolved dependency for RULE-REL-REQ-01 in Q2');
 
-    const task = assessment.q4_nextPermittedActions.find(t => t.ruleId === 'RULE-APH-6.46.1');
+    const task = assessment.q4_nextPermittedActions.find(t => t.ruleId === 'RULE-REL-REQ-01' || t.ruleId === 'RULE-APH-6.46.1');
     if (!task) throw new Error('Expected next action task generated for missing request letter');
     if (task.responsibleRole !== 'institution') throw new Error(`Expected responsible role institution, got ${task.responsibleRole}`);
   });
 
   // Fixture 3: Missing Affidavit 6
-  recordTest('Regulatory Rules', 'FIXTURE-03', 'Missing Affidavit 6 triggers RULE-APH-6.46.2 with statutory citation', () => {
+  recordTest('Regulatory Rules', 'FIXTURE-03', 'Missing Affidavit 6 triggers RULE-REL-AFF-02 with statutory citation', () => {
     const docsWithoutAff = [validRequestDoc, validFdrDoc, validEoaDoc];
     const assessment = computeCaseAssessment({
       instrument: baseInstrument,
@@ -269,17 +275,17 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const req2 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.2');
-    if (req2?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.2, got ${req2?.status}`);
+    const req2 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-AFF-02' || r.legacyRuleId === 'RULE-APH-6.46.2');
+    if (req2?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(2), got ${req2?.status}`);
     if (!req2.clauseRef.includes('6.46')) throw new Error(`Expected Clause 6.46 reference, got ${req2.clauseRef}`);
 
-    const task = assessment.q4_nextPermittedActions.find(t => t.ruleId === 'RULE-APH-6.46.2');
+    const task = assessment.q4_nextPermittedActions.find(t => t.ruleId === 'RULE-REL-AFF-02' || t.ruleId === 'RULE-APH-6.46.2');
     if (!task) throw new Error('Expected task for missing Affidavit 6');
     if (task.responsibleRole !== 'institution') throw new Error(`Expected institution role, got ${task.responsibleRole}`);
   });
 
   // Fixture 4: Missing FDR / Payment Evidence
-  recordTest('Regulatory Rules', 'FIXTURE-04', 'Missing FDR/Payment Evidence triggers RULE-APH-6.46.3 blocker', () => {
+  recordTest('Regulatory Rules', 'FIXTURE-04', 'Missing FDR/Payment Evidence triggers RULE-REL-FDR-03 blocker', () => {
     const docsWithoutFdr = [validRequestDoc, validAffidavitDoc, validEoaDoc];
     const assessment = computeCaseAssessment({
       instrument: baseInstrument,
@@ -289,12 +295,12 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const req3 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.3');
-    if (req3?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.3, got ${req3?.status}`);
+    const req3 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-FDR-03' || r.legacyRuleId === 'RULE-APH-6.46.3');
+    if (req3?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(3), got ${req3?.status}`);
   });
 
   // Fixture 5: Missing Latest LoA/EoA
-  recordTest('Regulatory Rules', 'FIXTURE-05', 'Missing Latest LoA/EoA triggers RULE-APH-6.46.4 requirement check', () => {
+  recordTest('Regulatory Rules', 'FIXTURE-05', 'Missing Latest LoA/EoA triggers RULE-REL-EOA-04 requirement check', () => {
     const docsWithoutEoa = [validRequestDoc, validAffidavitDoc, validFdrDoc];
     const assessment = computeCaseAssessment({
       instrument: baseInstrument,
@@ -304,8 +310,8 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const req4 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.4');
-    if (req4?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.4, got ${req4?.status}`);
+    const req4 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-EOA-04' || r.legacyRuleId === 'RULE-APH-6.46.4');
+    if (req4?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(4), got ${req4?.status}`);
   });
 
   // Fixture 6: Required Clearance Not Recorded
@@ -320,7 +326,7 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const req5 = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.5');
+    const req5 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-CLR-05' || r.legacyRuleId === 'RULE-APH-6.46.5');
     if (req5?.status !== 'awaiting_confirmation') {
       throw new Error(`Expected awaiting_confirmation, got ${req5?.status}`);
     }
@@ -330,8 +336,8 @@ export async function GET(req: Request) {
     }
   });
 
-  // Fixture 7: Replacement Document Without Predecessor Link
-  recordTest('Regulatory Rules', 'FIXTURE-07', 'Replacement instrument without predecessor link triggers RULE-APH-1.4.6', () => {
+  // Fixture 7: Replacement Document Without Predecessor Link (Internal Workflow Control)
+  recordTest('Regulatory Rules', 'FIXTURE-07', 'Replacement instrument without predecessor link triggers RULE-WORKFLOW-REPLACE-10', () => {
     const replacementInstrument: Instrument = {
       ...baseInstrument,
       id: 'FDR-2024-9002',
@@ -346,9 +352,12 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const reqChain = assessment.requirements.find(r => r.ruleId === 'RULE-APH-1.4.6');
+    const reqChain = assessment.requirements.find(r => r.ruleId === 'RULE-WORKFLOW-REPLACE-10' || r.legacyRuleId === 'RULE-APH-1.4.6');
     if (reqChain?.status !== 'inconsistent') {
       throw new Error(`Expected 'inconsistent' status for unlinked replacement, got ${reqChain?.status}`);
+    }
+    if (reqChain.isOfficialRule !== false) {
+      throw new Error('Replacement continuity protocol must be classified as internal workflow control (isOfficialRule: false)');
     }
   });
 
@@ -379,7 +388,7 @@ export async function GET(req: Request) {
     );
 
     const autoRenewalFinding = reconciliation.findings.find(
-      f => f.ruleId === 'RULE-APH-6.46.6' || f.field.includes('Renewal')
+      f => f.ruleId === 'RULE-REL-TENOR-06' || f.ruleId === 'RULE-APH-6.46.6' || f.field.includes('Renewal')
     );
     if (!autoRenewalFinding) {
       throw new Error('Expected reconciliation finding for unverified auto-renewal');
@@ -428,7 +437,7 @@ export async function GET(req: Request) {
   });
 
   // Fixture 10: Special-Case Conditions (Progressive Closure)
-  recordTest('Regulatory Rules', 'FIXTURE-10', 'Progressive closure special case applies Clause 6.46.7 specific conditions', () => {
+  recordTest('Regulatory Rules', 'FIXTURE-10', 'Progressive closure special case applies Chapter III closure conditions', () => {
     const closureDocs = [validRequestDoc, validAffidavitDoc, validFdrDoc, validEoaDoc];
     const assessment = computeCaseAssessment({
       instrument: baseInstrument,
@@ -439,10 +448,13 @@ export async function GET(req: Request) {
       currentDate: new Date('2026-05-01'),
     });
 
-    const closureReq = assessment.requirements.find(r => r.ruleId === 'RULE-APH-6.46.7');
-    if (!closureReq) throw new Error('Expected RULE-APH-6.46.7 to be evaluated for progressive closure case');
+    const closureReq = assessment.requirements.find(r => r.ruleId === 'RULE-REL-CLOSE-07' || r.legacyRuleId === 'RULE-APH-6.46.7');
+    if (!closureReq) throw new Error('Expected RULE-REL-CLOSE-07 to be evaluated for progressive closure case');
     if (closureReq.status !== 'missing') {
       throw new Error(`Expected missing status for unattached University closure cert, got ${closureReq.status}`);
+    }
+    if (!closureReq.clauseRef.includes('Chapter III')) {
+      throw new Error(`Expected Chapter III citation, got ${closureReq.clauseRef}`);
     }
   });
 
@@ -452,6 +464,182 @@ export async function GET(req: Request) {
       if (rule.handbookVersion !== '2024–2027') throw new Error(`Rule ${rule.id} has incorrect version: ${rule.handbookVersion}`);
       if (!rule.officialSourceUrl.includes('aicte.gov.in')) throw new Error(`Rule ${rule.id} lacks official AICTE URL`);
       if (rule.version < 1) throw new Error(`Rule ${rule.id} lacks positive version number`);
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // PART 1B: TARGETED REGULATORY CITATION REGRESSION SUITE
+  // --------------------------------------------------------------------------
+
+  // REG-01: Clause 1.4.5 is NOT misrepresented as FDR joint-pledge or duplicate rule
+  recordTest('Regulatory Regression', 'REG-01', 'Clause 1.4.5 is NOT misrepresented as FDR joint-pledge or duplicate rule', () => {
+    // 1. No rule in AICTE_REGULATORY_RULES can cite Clause 1.4.5 for joint FDR pledge
+    for (const rule of AICTE_REGULATORY_RULES) {
+      if (rule.clauseReference.includes('1.4.5')) {
+        throw new Error(`CRITICAL CITATION DEFECT: Rule ${rule.id} improperly cites Clause 1.4.5. Official Clause 1.4.5 is strictly for application copy submission to State/UT and Board.`);
+      }
+    }
+
+    // 2. Deposit creation proof rule (RULE-REL-FDR-03) must strictly cite Clause 6.46.a(3)
+    const fdrRule = AICTE_REGULATORY_RULES.find(r => r.id === 'RULE-REL-FDR-03');
+    if (!fdrRule || fdrRule.clauseReference !== 'Clause 6.46.a(3)') {
+      throw new Error(`RULE-REL-FDR-03 must cite Clause 6.46.a(3), got ${fdrRule?.clauseReference}`);
+    }
+
+    // 3. Uniqueness reconciliation check must NOT cite Clause 1.4.5
+    const duplicateRec = reconcileInstrumentEvidence(
+      baseInstrument,
+      processUploadedEvidence({ fileName: 'test.pdf', textContent: 'SBI-FDR-9001' }),
+      [baseInstrument, { ...baseInstrument, id: 'FDR-OTHER' }],
+      []
+    );
+    const dupFinding = duplicateRec.findings.find(f => f.id.includes('rec-dup'));
+    if (dupFinding && dupFinding.whyItMatters.includes('Clause 1.4.5')) {
+      throw new Error('Reconciliation duplicate finding improperly cited Clause 1.4.5');
+    }
+  });
+
+  // REG-02: Clause 1.4.6 is NOT misrepresented as replacement continuity rule
+  recordTest('Regulatory Regression', 'REG-02', 'Clause 1.4.6 is NOT misrepresented as replacement continuity rule', () => {
+    const replaceRule = AICTE_REGULATORY_RULES.find(r => r.id === 'RULE-WORKFLOW-REPLACE-10');
+    if (!replaceRule) throw new Error('Missing RULE-WORKFLOW-REPLACE-10 in regulatory catalog');
+
+    // Replacement continuity must be recorded as an internal workflow control
+    if (replaceRule.reviewStatus !== 'workflow_control') {
+      throw new Error(`RULE-WORKFLOW-REPLACE-10 must have reviewStatus 'workflow_control', got ${replaceRule.reviewStatus}`);
+    }
+
+    // Must NOT claim statutory basis in APH Clause 1.4.6 (which is DSC digital signature upload)
+    if (replaceRule.clauseReference.includes('Clause 1.4.6') && !replaceRule.clauseReference.includes('Workflow')) {
+      throw new Error(`RULE-WORKFLOW-REPLACE-10 improperly cites statutory Clause 1.4.6: ${replaceRule.clauseReference}`);
+    }
+
+    // Evaluation must flag isOfficialRule as false
+    const evalResult = replaceRule.evaluate({
+      instrument: { ...baseInstrument, status: 'replacement_submitted', linkedPredecessorId: 'FDR-PREV' },
+      documents: [],
+    });
+    if (evalResult.isOfficialRule !== false) {
+      throw new Error('Replacement continuity evaluation must set isOfficialRule: false');
+    }
+  });
+
+  // REG-03: Actual release-procedure references match official handbook hierarchy
+  recordTest('Regulatory Regression', 'REG-03', 'Release procedure references match official APH 2024-2027 hierarchy (6.46.a(1-4), 6.46.b)', () => {
+    const expectedHierarchy: Record<string, string> = {
+      'RULE-REL-REQ-01': 'Clause 6.46.a(1)',
+      'RULE-REL-AFF-02': 'Clause 6.46.a(2) & Appendix 8 (Affidavit 6)',
+      'RULE-REL-FDR-03': 'Clause 6.46.a(3)',
+      'RULE-REL-EOA-04': 'Clause 6.46.a(4)',
+      'RULE-REL-CLR-05': 'Clause 6.46.b',
+      'RULE-REL-TENOR-06': 'Chapter I, Section 1.4 (Table 1.4) & Clause 6.46',
+      'RULE-REL-CLOSE-07': 'Chapter III (Closure Guidelines) & Clause 6.46',
+    };
+
+    for (const [id, expectedClause] of Object.entries(expectedHierarchy)) {
+      const rule = AICTE_REGULATORY_RULES.find(r => r.id === id);
+      if (!rule) throw new Error(`Missing expected rule ${id}`);
+      if (rule.clauseReference !== expectedClause) {
+        throw new Error(`Rule ${id} citation mismatch: expected "${expectedClause}", got "${rule.clauseReference}"`);
+      }
+    }
+  });
+
+  // REG-04: Conditional rules apply only when their recorded conditions are satisfied
+  recordTest('Regulatory Regression', 'REG-04', 'Conditional rules apply only when their recorded conditions are satisfied', () => {
+    // 1. Standard Case without Progressive Closure: RULE-REL-CLOSE-07 must be not_applicable
+    const stdAssessment = computeCaseAssessment({
+      instrument: baseInstrument,
+      documents: [validRequestDoc, validAffidavitDoc, validFdrDoc, validEoaDoc],
+      verifications: validClearances,
+      isProgressiveClosure: false,
+      hasEmbezzlementInquiry: false,
+      currentDate: new Date('2026-05-01'),
+    });
+    const closeReq = stdAssessment.requirements.find(r => r.ruleId === 'RULE-REL-CLOSE-07');
+    if (closeReq?.status !== 'not_applicable') {
+      throw new Error(`Progressive closure rule should be not_applicable on standard case, got ${closeReq?.status}`);
+    }
+
+    // 2. Case without Embezzlement Inquiry: RULE-REL-VIG-08 must be not_applicable
+    const vigReq = stdAssessment.requirements.find(r => r.ruleId === 'RULE-REL-VIG-08');
+    if (vigReq?.status !== 'not_applicable') {
+      throw new Error(`Anti-embezzlement rule should be not_applicable when no inquiry exists, got ${vigReq?.status}`);
+    }
+
+    // 3. Case not marked as replacement: RULE-WORKFLOW-REPLACE-10 must be not_applicable
+    const replaceReq = stdAssessment.requirements.find(r => r.ruleId === 'RULE-WORKFLOW-REPLACE-10');
+    if (replaceReq?.status !== 'not_applicable') {
+      throw new Error(`Replacement continuity rule should be not_applicable for non-replacement instrument, got ${replaceReq?.status}`);
+    }
+
+    // 4. Case without release request: RULE-WORKFLOW-DECISION-09 must be not_applicable
+    const noRelAssessment = computeCaseAssessment({
+      instrument: baseInstrument,
+      documents: [validFdrDoc],
+      verifications: [],
+      releaseRequest: null,
+      currentDate: new Date('2026-05-01'),
+    });
+    const decReq = noRelAssessment.requirements.find(r => r.ruleId === 'RULE-WORKFLOW-DECISION-09');
+    if (decReq?.status !== 'not_applicable') {
+      throw new Error(`Senior officer decision rule should be not_applicable without release request, got ${decReq?.status}`);
+    }
+  });
+
+  // REG-05: Unsupported legal claims are flagged for review rather than enforced as confirmed regulations
+  recordTest('Regulatory Regression', 'REG-05', 'Unsupported legal claims are flagged for review rather than enforced as regulations', () => {
+    // Anti-embezzlement circular has no confirmed subclause number; must be draft_awaiting_review and isOfficialRule: false
+    const vigRule = AICTE_REGULATORY_RULES.find(r => r.id === 'RULE-REL-VIG-08');
+    if (!vigRule) throw new Error('Missing RULE-REL-VIG-08');
+    if (vigRule.reviewStatus !== 'draft_awaiting_review') {
+      throw new Error(`Expected draft_awaiting_review for anti-embezzlement administrative rule, got ${vigRule.reviewStatus}`);
+    }
+
+    // Internal workflow controls must be classified with reviewStatus 'workflow_control'
+    const decisionRule = AICTE_REGULATORY_RULES.find(r => r.id === 'RULE-WORKFLOW-DECISION-09');
+    if (decisionRule?.reviewStatus !== 'workflow_control') {
+      throw new Error(`Expected workflow_control for senior officer decision control, got ${decisionRule?.reviewStatus}`);
+    }
+  });
+
+  // REG-06: Uploaded Axis Bank Deposit Advice with Joint Holder Not Applicable is an operational check, not a statutory violation
+  recordTest('Regulatory Regression', 'REG-06', 'Deposit Advice with Joint Holder "Not Applicable" is an operational manual-review check, not a statutory violation', () => {
+    const adviceSuitability = assessDocumentSuitability('deposit_advice', {
+      depositAmount: { value: 10000000, confidence: 0.95, extractionMethod: 'structured_regex' },
+      maturityDate: { value: '2026-06-15', confidence: 0.95, extractionMethod: 'structured_regex' },
+      jointHolder: { value: 'Not Applicable', confidence: 0.92, extractionMethod: 'structured_regex' },
+    });
+
+    if (adviceSuitability.status !== 'conditionally_suitable') {
+      throw new Error(`Expected conditionally_suitable, got ${adviceSuitability.status}`);
+    }
+    if (!adviceSuitability.rationale.includes('operational manual-review check')) {
+      throw new Error(`Expected rationale to designate Joint Holder NA as an operational check: ${adviceSuitability.rationale}`);
+    }
+    if (!adviceSuitability.rationale.includes('not as a confirmed regulatory violation')) {
+      throw new Error(`Must explicitly affirm that this is not a confirmed regulatory violation: ${adviceSuitability.rationale}`);
+    }
+  });
+
+  // REG-07: Bank authenticity remains unconfirmed until an authorized verification is recorded
+  recordTest('Regulatory Regression', 'REG-07', 'Bank authenticity remains manual_confirmation_pending until an authorized verification is recorded', () => {
+    // Unverified baseline from extracted PDF
+    const unverified = assessInstrumentAuthenticity();
+    if (unverified.status !== 'manual_confirmation_pending') {
+      throw new Error(`Expected manual_confirmation_pending, got ${unverified.status}`);
+    }
+    if (unverified.method !== 'unverified_pending') {
+      throw new Error(`Expected unverified_pending method, got ${unverified.method}`);
+    }
+
+    // Authenticity is ONLY satisfied when verified by source
+    const verified = assessInstrumentAuthenticity({
+      verifiedBySource: true,
+      officerName: 'Branch Manager, Axis Bank Fort Mumbai',
+    });
+    if (verified.status !== 'authorized_source_verified') {
+      throw new Error(`Expected authorized_source_verified, got ${verified.status}`);
     }
   });
 
@@ -553,8 +741,14 @@ export async function GET(req: Request) {
     if (!fields.fdrNumber || !fields.fdrNumber.maskedValue || !fields.fdrNumber.maskedValue.includes('3323')) {
       throw new Error(`Expected masked account number ending in 3323, got ${fields.fdrNumber?.maskedValue}`);
     }
+    if (!fields.jointHolder || fields.jointHolder.value !== 'Not Applicable') {
+      throw new Error(`Expected jointHolder 'Not Applicable', got ${fields.jointHolder?.value}`);
+    }
     if (extraction.suitabilityAssessment.status !== 'conditionally_suitable') {
       throw new Error(`Expected conditionally_suitable suitability, got ${extraction.suitabilityAssessment.status}`);
+    }
+    if (!extraction.suitabilityAssessment.rationale.includes('operational manual-review check')) {
+      throw new Error(`Expected operational manual-review check in rationale, got: ${extraction.suitabilityAssessment.rationale}`);
     }
   });
 

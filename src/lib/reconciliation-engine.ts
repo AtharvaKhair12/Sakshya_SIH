@@ -65,7 +65,7 @@ export function reconcileInstrumentEvidence(
       submittedSource: `Current Application (${instrument.id})`,
       comparisonSource: `Existing Institutional Register (${duplicateInstrument.institutionName})`,
       differenceDetected: true,
-      whyItMatters: 'AICTE Approval Process Handbook Clause 1.4.5 strictly prohibits sharing or duplicate registration of the same FDR receipt number across institutions.',
+      whyItMatters: 'AICTE institutional security deposit policy strictly prohibits sharing or duplicate registration of the same FDR receipt number across institutions.',
       ruleId: 'RULE-APH-05',
       severity: 'critical',
       suggestedAction: 'Escalate immediately to Scrutiny Team. Request verified bank branch certificate confirming distinct deposit account.',
@@ -114,7 +114,7 @@ export function reconcileInstrumentEvidence(
         submittedSource: 'Instrument Record',
         comparisonSource: `${extractionData?.fileName || 'Uploaded Evidence'}`,
         differenceDetected: true,
-        whyItMatters: 'Statutory security deposit amounts must strictly match the Approval Process Handbook prescribed minimums (Table 1.1).',
+        whyItMatters: 'Statutory security deposit amounts must strictly match the Approval Process Handbook prescribed minimums (Chapter I, Table 1.4).',
         ruleId: 'RULE-APH-01',
         severity: 'critical',
         suggestedAction: 'Flag for financial discrepancy review. Verify whether part payment was made or wrong document was attached.',
@@ -176,7 +176,7 @@ export function reconcileInstrumentEvidence(
         comparisonSource: 'Case Document Dossier',
         differenceDetected: true,
         whyItMatters: 'CRITICAL AUDIT NOTICE: An auto-renewal instruction in a historical Deposit Advice does NOT prove that renewal was executed by the bank. Actual renewal receipt or current bank confirmation is mandatory.',
-        ruleId: 'RULE-APH-6.46.6',
+        ruleId: 'RULE-REL-TENOR-06',
         severity: 'critical',
         suggestedAction: 'Issue formal notice to institution requesting current bank renewal advice or bank branch ledger statement.',
         responsibleRole: 'institution',
@@ -185,7 +185,7 @@ export function reconcileInstrumentEvidence(
     }
   }
 
-  // 6. Replacement Continuity Audit
+  // 6. Replacement Continuity Audit (Internal Workflow Control)
   if (instrument.status === 'replacement_submitted' || instrument.linkedPredecessorId) {
     if (!instrument.linkedPredecessorId) {
       findings.push({
@@ -196,8 +196,8 @@ export function reconcileInstrumentEvidence(
         submittedSource: 'Instrument Status',
         comparisonSource: 'Continuity Graph Database',
         differenceDetected: true,
-        whyItMatters: 'Replacement instruments must link to predecessor to prevent duplicate claims and maintain deposit timeline continuity.',
-        ruleId: 'RULE-APH-1.4.6',
+        whyItMatters: 'Internal workflow continuity control: Replacement instruments must link to predecessor to prevent duplicate claims and maintain deposit timeline continuity.',
+        ruleId: 'RULE-WORKFLOW-REPLACE-10',
         severity: 'error',
         suggestedAction: 'Link the originating predecessor FDR record to this replacement instrument.',
         responsibleRole: 'scrutiny_officer',
