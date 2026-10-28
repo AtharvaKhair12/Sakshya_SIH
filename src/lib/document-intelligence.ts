@@ -1,0 +1,435 @@
+// ============================================================================
+// Sakshya PS 1 — Real Document Understanding & Intelligence Adapter
+// Classifies FDR-related documents, extracts structured fields with provenance,
+// computes suitability assessments, and separates document suitability from bank authenticity.
+// ============================================================================
+
+import {
+  DocumentClassificationType, DocumentExtractionData, ExtractedFieldMap,
+  ExtractedFieldItem, DocumentSuitabilityAssessment, InstrumentAuthenticityAssessment
+} from './types';
+import { extractTextFromPdfBuffer } from './pdf-extractor';
+
+export interface RawExtractionInput {
+  fileName: string;
+  fileBuffer?: Buffer;
+  textContent?: string;
+  documentId?: string;
+  instrumentId?: string;
+  fileSize?: number;
+}
+
+// Known Indian Commercial Banks for High-Confidence Extraction
+const KNOWN_BANKS = [
+  'State Bank of India', 'Bank of Baroda', 'Punjab National Bank',
+  'Canara Bank', 'Union Bank of India', 'Bank of India',
+  'Bank of Maharashtra', 'Central Bank of India', 'Indian Bank',
+  'Indian Overseas Bank', 'UCO Bank', 'Punjab & Sind Bank',
+  'HDFC Bank', 'ICICI Bank', 'Axis Bank', 'Kotak Mahindra Bank',
+  'Federal Bank', 'IndusInd Bank', 'IDBI Bank'
+];
+
+/**
+ * Mask sensitive account/instrument identifiers for privacy preservation.
+ * e.g., "SBI-FDR-90001234" -> "SBI-FDR-XXXX1234"
+ * e.g., "450067891234" -> "XXXXXXXX1234"
+ */
+export function maskSensitiveIdentifier(identifier?: string): string {
+  if (!identifier) return 'XXXX';
+  const clean = String(identifier).trim();
+  if (clean.length <= 4) return clean;
+  const lastFour = clean.slice(-4);
+  const prefix = clean.includes('-') ? clean.slice(0, clean.lastIndexOf('-') + 1) : '';
+  return `${prefix}XXXX${lastFour}`;
+}
+
+/**
+ * Classifies document based on text content and filename.
+ * Notice: A document titled "Deposit Advice" is explicitly classified as `deposit_advice`
+ * and NEVER rejected merely because it does not say "FDR".
+ */
+export function classifyDocument(text: string, fileName: string): { type: DocumentClassificationType; confidence: number; rationale: string } {
+  const t = text.toLowerCase();
+  const fn = fileName.toLowerCase();
+
+  // 1. Bank Deposit Advice / Term Deposit Advice
+  if (
+    t.includes('deposit advice') || t.includes('term deposit advice') ||
+    t.includes('fixed deposit advice') || t.includes('fdr advice') ||
+    fn.includes('deposit_advice') || fn.includes('deposit advice') ||
+    fn.includes('advice')
+  ) {
+    return {
+      type: 'deposit_advice',
+      confidence: 0.94,
+      rationale: 'Identified as Bank Deposit Advice / Term Deposit Advice containing deposit terms and maturity instructions.',
+    };
+  }
+
+  // 2. Affidavit 6
+  if (
+    t.includes('affidavit 6') || t.includes('affidavit no. 6') ||
+    t.includes('affidavit-6') || (t.includes('affidavit') && t.includes('aicte') && t.includes('release')) ||
+    fn.includes('affidavit')
+  ) {
+    return {
+      type: 'affidavit_6',
+      confidence: 0.96,
+      rationale: 'Identified as Statutory Affidavit 6 sworn under AICTE Approval Process Handbook guidelines.',
+    };
+  }
+
+  // 3. FDR / Term Deposit Certificate
+  if (
+    t.includes('fixed deposit receipt') || t.includes('term deposit receipt') ||
+    t.includes('fdr certificate') || t.includes('special term deposit receipt') ||
+    fn.includes('fdr') || fn.includes('receipt')
+  ) {
+    return {
+      type: 'fdr_certificate',
+      confidence: 0.95,
+      rationale: 'Identified as an official Fixed Deposit Receipt (FDR) / Term Deposit Certificate.',
+    };
+  }
+
+  // 4. Formal Release Application Letter
+  if (
+    t.includes('release of fdr') || t.includes('refund of security deposit') ||
+    t.includes('application for release') || t.includes('request letter') ||
+    fn.includes('request') || fn.includes('release_letter')
+  ) {
+    return {
+      type: 'release_request_letter',
+      confidence: 0.91,
+      rationale: 'Identified as a formal institutional application requesting release of security deposit.',
+    };
+  }
+
+  // 5. Letter of Approval / Extension of Approval
+  if (
+    t.includes('extension of approval') || t.includes('letter of approval') ||
+    t.includes('approval process handbook') || fn.includes('eoa') || fn.includes('loa')
+  ) {
+    return {
+      type: 'eoa_loa',
+      confidence: 0.93,
+      rationale: 'Identified as an official AICTE Letter of Approval (LoA) or Extension of Approval (EoA).',
+    };
+  }
+
+  // 6. Cell / Bureau Clearance or NOC
+  if (
+    t.includes('no objection certificate') || t.includes('pgrc clearance') ||
+    t.includes('vigilance clearance') || fn.includes('noc') || fn.includes('clearance')
+  ) {
+    return {
+      type: 'clearance_noc',
+      confidence: 0.90,
+      rationale: 'Identified as an administrative No Objection Certificate or Cell Clearance record.',
+    };
+  }
+
+  // 7. Payment Proof / RTGS Challan
+  if (
+    t.includes('rtgs') || t.includes('neft') || t.includes('counterfoil') ||
+    t.includes('payment receipt') || fn.includes('payment') || fn.includes('challan')
+  ) {
+    return {
+      type: 'payment_proof',
+      confidence: 0.88,
+      rationale: 'Identified as RTGS/NEFT payment evidence or security deposit creation transaction proof.',
+    };
+  }
+
+  return {
+    type: 'other',
+    confidence: 0.65,
+    rationale: 'Document classification indeterminate based on available text patterns.',
+  };
+}
+
+/**
+ * Extracts structured key-value fields from document text with provenance and confidence.
+ */
+export function extractFieldsFromText(text: string): ExtractedFieldMap {
+  const fields: ExtractedFieldMap = {};
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // 1. Bank Name Extraction
+  for (const bank of KNOWN_BANKS) {
+    if (new RegExp(`\\b${bank}\\b`, 'i').test(text)) {
+      const matchIdx = text.search(new RegExp(`\\b${bank}\\b`, 'i'));
+      fields.bankName = {
+        value: bank,
+        confidence: 0.95,
+        sourceSnippet: text.slice(Math.max(0, matchIdx - 20), Math.min(text.length, matchIdx + bank.length + 30)),
+        extractionMethod: 'structured_regex',
+      };
+      break;
+    }
+  }
+
+  // 2. FDR / Receipt / Account Number Extraction
+  const fdrRegexes = [
+    /(?:FDR|Receipt|Certificate|A\/C|Account|Deposit\s*No|Fixed\s*Deposit\s*No)[.\s:#-]+([A-Z0-9-]{6,20})/i,
+    /(SBI-FDR-[0-9]{6,12}|BOB-FDR-[0-9]{6,12}|PNB-FDR-[0-9]{6,12}|FDR-[0-9]{6,12})/i,
+    /(?:A\/c\s*No\.?|Account\s*Number)[.\s:]*([0-9]{9,18})/i,
+  ];
+
+  for (const regex of fdrRegexes) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      const rawVal = match[1].trim();
+      fields.fdrNumber = {
+        value: rawVal,
+        confidence: 0.92,
+        sourceSnippet: match[0],
+        extractionMethod: 'structured_regex',
+        isMasked: true,
+        maskedValue: maskSensitiveIdentifier(rawVal),
+      };
+      break;
+    }
+  }
+
+  // 3. Deposit Principal Amount Extraction
+  const amountRegexes = [
+    /(?:Deposit\s*Amount|Principal\s*Amount|Principal|Sum\s*of\s*Rs\.?|Amount)[.\s:₹RsINR-]+([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/i,
+    /₹\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/,
+    /Rs\.?\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/i,
+  ];
+
+  for (const regex of amountRegexes) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      const rawNum = match[1].replace(/,/g, '');
+      const parsed = parseFloat(rawNum);
+      if (!isNaN(parsed) && parsed >= 100000) {
+        fields.depositAmount = {
+          value: parsed,
+          confidence: 0.91,
+          sourceSnippet: match[0],
+          extractionMethod: 'structured_regex',
+        };
+        break;
+      }
+    }
+  }
+
+  // 4. Interest Rate Extraction
+  const rateMatch = text.match(/(?:Rate\s*of\s*Interest|Interest\s*Rate|ROI)[.\s:%]*([0-9]{1,2}(?:\.[0-9]{1,3})?)\s*%/i) ||
+                    text.match(/([0-9]{1,2}\.[0-9]{1,2})\s*%\s*(?:p\.?a\.?|per\s*annum)/i);
+  if (rateMatch && rateMatch[1]) {
+    fields.interestRate = {
+      value: parseFloat(rateMatch[1]),
+      confidence: 0.88,
+      sourceSnippet: rateMatch[0],
+      extractionMethod: 'structured_regex',
+    };
+  }
+
+  // 5. Issue / Start Date Extraction
+  const issueMatch = text.match(/(?:Date\s*of\s*Issue|Issue\s*Date|Start\s*Date|Date\s*of\s*Deposit|Deposit\s*Date)[.\s:]*([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4}|[0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+  if (issueMatch && issueMatch[1]) {
+    fields.issueDate = {
+      value: normalizeDateString(issueMatch[1]),
+      confidence: 0.90,
+      sourceSnippet: issueMatch[0],
+      extractionMethod: 'structured_regex',
+    };
+  }
+
+  // 6. Maturity Date Extraction
+  const maturityMatch = text.match(/(?:Maturity\s*Date|Due\s*Date|Date\s*of\s*Maturity)[.\s:]*([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4}|[0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+  if (maturityMatch && maturityMatch[1]) {
+    fields.maturityDate = {
+      value: normalizeDateString(maturityMatch[1]),
+      confidence: 0.94,
+      sourceSnippet: maturityMatch[0],
+      extractionMethod: 'structured_regex',
+    };
+  }
+
+  // 7. Maturity Instruction Extraction (Auto-Renewal vs Credit)
+  const renewMatch = text.match(/(Auto[-\s]Renewal(?:\s+for\s+same\s+period)?|Renew\s+automatically|Do\s+not\s+renew|Credit\s+to\s+account|Pay\s+on\s+maturity)/i);
+  if (renewMatch) {
+    fields.maturityInstruction = {
+      value: renewMatch[1].trim(),
+      confidence: 0.89,
+      sourceSnippet: renewMatch[0],
+      extractionMethod: 'structured_regex',
+    };
+  }
+
+  // 8. Joint Holder & Lien / Pledge Status
+  const jointMatch = text.match(/(?:Jointly\s*with|Joint\s*Holder|In\s*Joint\s*Names\s*of)[.\s:]*([^\n\r;]{5,80})/i) ||
+                     text.match(/(Regional\s*Officer,\s*AICTE[^\n\r;]*|AICTE,\s*New\s*Delhi)/i);
+  if (jointMatch) {
+    fields.jointHolder = {
+      value: jointMatch[1].trim(),
+      confidence: 0.92,
+      sourceSnippet: jointMatch[0],
+      extractionMethod: 'structured_regex',
+    };
+  }
+
+  const lienMatch = text.match(/(Lien\s*marked(?:\s+in\s+favour\s+of\s+AICTE)?|Pledged\s+to\s+AICTE|Non-transferable|Not\s+transferable|Under\s+lien)/i);
+  if (lienMatch) {
+    fields.lienPledgeStatus = {
+      value: lienMatch[1].trim(),
+      confidence: 0.91,
+      sourceSnippet: lienMatch[0],
+      extractionMethod: 'structured_regex',
+    };
+  }
+
+  // 9. Branch Name Extraction
+  const branchMatch = text.match(/(?:Branch|Branch\s*Name)[.\s:]*([A-Za-z0-9\s,-]{4,40})(?:\s+IFSC|\s+Pin|\n|\r)/i);
+  if (branchMatch && branchMatch[1]) {
+    fields.branchName = {
+      value: branchMatch[1].trim(),
+      confidence: 0.85,
+      sourceSnippet: branchMatch[0],
+      extractionMethod: 'heuristic',
+    };
+  }
+
+  return fields;
+}
+
+/**
+ * Standardizes common Indian and international date formats to YYYY-MM-DD.
+ */
+function normalizeDateString(raw: string): string {
+  const clean = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+
+  const parts = clean.split(/[/-]/);
+  if (parts.length === 3) {
+    let day = parts[0].padStart(2, '0');
+    let month = parts[1].padStart(2, '0');
+    let year = parts[2];
+    if (year.length === 2) year = `20${year}`;
+    if (parseInt(month, 10) > 12 && parseInt(day, 10) <= 12) {
+      // Swapped format
+      const temp = day;
+      day = month;
+      month = temp;
+    }
+    return `${year}-${month}-${day}`;
+  }
+  return clean;
+}
+
+/**
+ * Evaluates document suitability (Assessment A) without confusing it with bank authenticity.
+ */
+export function assessDocumentSuitability(
+  type: DocumentClassificationType,
+  fields: ExtractedFieldMap
+): DocumentSuitabilityAssessment {
+  if (type === 'deposit_advice') {
+    const hasAmount = Boolean(fields.depositAmount?.value);
+    const hasMaturity = Boolean(fields.maturityDate?.value);
+    const hasPledge = Boolean(fields.jointHolder?.value || fields.lienPledgeStatus?.value);
+
+    return {
+      status: hasAmount && hasMaturity ? 'conditionally_suitable' : 'pending_review',
+      documentCategory: 'deposit_advice',
+      meetsChecklistCriteria: hasAmount && hasMaturity,
+      rationale: hasPledge
+        ? 'Document is classified as Bank Deposit Advice with explicit joint pledge. Suitable as secondary evidence of deposit creation under AICTE APH Clause 6.46.3; requires scrutiny verification.'
+        : 'Document is classified as Bank Deposit Advice. Acceptable as deposit creation evidence, but lacks explicit joint AICTE pledge endorsement on the advice face.',
+      distinctionNote: 'Assessment A (Suitability): Verifies document structure and checklist presence. It does NOT constitute independent bank authenticity verification.',
+    };
+  }
+
+  if (type === 'fdr_certificate') {
+    return {
+      status: 'suitable',
+      documentCategory: 'fdr_certificate',
+      meetsChecklistCriteria: true,
+      rationale: 'Official Fixed Deposit Receipt (FDR) structure meets primary evidence standard under AICTE APH Appendix 8.',
+      distinctionNote: 'Assessment A (Suitability): Meets primary evidence criteria. Assessment B (Bank Authenticity) remains subject to independent confirmation.',
+    };
+  }
+
+  if (type === 'affidavit_6') {
+    return {
+      status: 'suitable',
+      documentCategory: 'affidavit_6',
+      meetsChecklistCriteria: true,
+      rationale: 'Statutory Affidavit 6 declaration corresponds to AICTE APH Appendix 8 format.',
+      distinctionNote: 'Assessment A (Suitability): Legal undertaking presence confirmed.',
+    };
+  }
+
+  return {
+    status: 'pending_review',
+    documentCategory: type,
+    meetsChecklistCriteria: false,
+    rationale: 'Document classification requires authorized officer confirmation of checklist suitability.',
+    distinctionNote: 'Reviewer manual confirmation required.',
+  };
+}
+
+/**
+ * Provides the explicit Assessment B (Instrument Authenticity) baseline.
+ */
+export function assessInstrumentAuthenticity(
+  verificationResult?: { verifiedBySource: boolean; method?: string; officerName?: string }
+): InstrumentAuthenticityAssessment {
+  if (verificationResult?.verifiedBySource) {
+    return {
+      status: 'authorized_source_verified',
+      method: 'direct_bank_api',
+      verifiedBy: verificationResult.officerName || 'Authorized Financial Channel',
+      verifiedAt: new Date().toISOString(),
+      rationale: 'Underlying financial instrument verified through direct authorized banking channel.',
+    };
+  }
+
+  return {
+    status: 'manual_confirmation_pending',
+    method: 'unverified_pending',
+    rationale: 'Document extracted from uploaded PDF; instrument authenticity remains pending independent bank verification or authorized officer branch confirmation.',
+  };
+}
+
+/**
+ * Main entrance: processes an uploaded document buffer or text into a full extraction bundle.
+ */
+export function processUploadedEvidence(input: RawExtractionInput): DocumentExtractionData {
+  let extractedText = input.textContent || '';
+  let pageCount = 1;
+
+  if (input.fileBuffer) {
+    const pdfRes = extractTextFromPdfBuffer(input.fileBuffer);
+    if (pdfRes.text) {
+      extractedText = pdfRes.text;
+      pageCount = pdfRes.pageCount;
+    }
+  }
+
+  // 1. Classification
+  const classification = classifyDocument(extractedText, input.fileName);
+
+  // 2. Field Extraction
+  const fields = extractFieldsFromText(extractedText);
+
+  // 3. Suitability Assessment (Assessment A)
+  const suitability = assessDocumentSuitability(classification.type, fields);
+
+  return {
+    documentId: input.documentId || `doc-${Date.now().toString().slice(-6)}`,
+    instrumentId: input.instrumentId || 'unassigned',
+    fileName: input.fileName,
+    fileSize: input.fileSize || (input.fileBuffer ? input.fileBuffer.length : 1024),
+    classification: classification.type,
+    classificationConfidence: classification.confidence,
+    fields,
+    suitabilityAssessment: suitability,
+    pageCount,
+    rawTextSnippet: extractedText.slice(0, 500),
+  };
+}

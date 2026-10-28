@@ -504,3 +504,210 @@ export const ROLE_PERMISSIONS: Record<Role, Permission> = {
     canResetDemoData: true,
   },
 };
+
+// ============================================================================
+// SAKSHYA PS 1: FDR EVIDENCE-TO-ACTION ENGINE DOMAIN TYPES
+// ============================================================================
+
+export type DocumentClassificationType =
+  | 'fdr_certificate'
+  | 'deposit_advice'
+  | 'payment_proof'
+  | 'affidavit_6'
+  | 'release_request_letter'
+  | 'eoa_loa'
+  | 'clearance_noc'
+  | 'replacement_instrument'
+  | 'other';
+
+export const DOCUMENT_CLASSIFICATION_LABELS: Record<DocumentClassificationType, string> = {
+  fdr_certificate: 'Fixed Deposit Receipt (FDR)',
+  deposit_advice: 'Bank Deposit Advice / Term Deposit Advice',
+  payment_proof: 'Deposit Creation / Payment Proof',
+  affidavit_6: 'Affidavit 6 (Statutory Release Declaration)',
+  release_request_letter: 'Formal Release Application Letter',
+  eoa_loa: 'Latest AICTE Approval (LoA / EoA)',
+  clearance_noc: 'Cell / Bureau Clearance (PGRC/Vigilance)',
+  replacement_instrument: 'Replacement / Renewal Instrument',
+  other: 'Supporting / Unclassified Document',
+};
+
+export interface ExtractedFieldItem {
+  value: string | number;
+  confidence: number;
+  page?: number;
+  sourceSnippet?: string;
+  extractionMethod: 'pdf_text_parser' | 'structured_regex' | 'heuristic' | 'manual_override';
+  isMasked?: boolean;
+  maskedValue?: string;
+}
+
+export interface ExtractedFieldMap {
+  fdrNumber?: ExtractedFieldItem;
+  bankName?: ExtractedFieldItem;
+  branchName?: ExtractedFieldItem;
+  depositAmount?: ExtractedFieldItem;
+  interestRate?: ExtractedFieldItem;
+  issueDate?: ExtractedFieldItem;
+  maturityDate?: ExtractedFieldItem;
+  maturityInstruction?: ExtractedFieldItem;
+  maturityAmount?: ExtractedFieldItem;
+  depositorName?: ExtractedFieldItem;
+  jointHolder?: ExtractedFieldItem;
+  lienPledgeStatus?: ExtractedFieldItem;
+  [key: string]: ExtractedFieldItem | undefined;
+}
+
+export interface DocumentSuitabilityAssessment {
+  status: 'suitable' | 'conditionally_suitable' | 'unsuitable' | 'pending_review';
+  documentCategory: DocumentClassificationType;
+  meetsChecklistCriteria: boolean;
+  rationale: string;
+  distinctionNote: string;
+}
+
+export interface InstrumentAuthenticityAssessment {
+  status:
+    | 'authorized_source_verified'
+    | 'manual_confirmation_pending'
+    | 'source_unavailable'
+    | 'inconclusive'
+    | 'mismatch_detected'
+    | 'simulated_unverified';
+  method: 'direct_bank_api' | 'manual_branch_letter' | 'ro_officer_affidavit' | 'unverified_pending';
+  verifiedBy?: string;
+  verifiedAt?: string;
+  rationale: string;
+}
+
+export interface DocumentExtractionData {
+  documentId: string;
+  instrumentId: string;
+  fileName: string;
+  fileSize: number;
+  classification: DocumentClassificationType;
+  classificationConfidence: number;
+  fields: ExtractedFieldMap;
+  suitabilityAssessment: DocumentSuitabilityAssessment;
+  contentHash?: string;
+  rawTextSnippet?: string;
+  pageCount?: number;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  humanCorrections?: Record<string, { original: string; corrected: string; correctedBy: string; timestamp: string }>;
+}
+
+export type RequirementStatus =
+  | 'satisfied'
+  | 'missing'
+  | 'inconsistent'
+  | 'awaiting_confirmation'
+  | 'stale'
+  | 'not_applicable'
+  | 'awaiting_review'
+  | 'source_unavailable';
+
+export const REQUIREMENT_STATUS_LABELS: Record<RequirementStatus, string> = {
+  satisfied: 'Satisfied by Evidence',
+  missing: 'Missing',
+  inconsistent: 'Inconsistent / Mismatch',
+  awaiting_confirmation: 'Awaiting Authorized Confirmation',
+  stale: 'Stale / Requires Update',
+  not_applicable: 'Not Applicable to Case',
+  awaiting_review: 'Awaiting Human Policy Review',
+  source_unavailable: 'Source Unavailable',
+};
+
+export interface RequirementEvaluation {
+  ruleId: string;
+  clauseRef: string;
+  title: string;
+  status: RequirementStatus;
+  explanation: string;
+  evidenceReference?: string;
+  responsibleRole: Role;
+  severity: RuleSeverity;
+  isOfficialRule: boolean;
+}
+
+export interface NextActionTask {
+  id: string;
+  instrumentId: string;
+  ruleId?: string;
+  title: string;
+  description: string;
+  evidenceRef?: string;
+  responsibleRole: Role;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  status: 'pending' | 'in_progress' | 'resolved' | 'waived';
+  prerequisiteForNextState: string;
+  createdAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionNotes?: string;
+}
+
+export interface ContinuityGraphNode {
+  id: string;
+  label: string;
+  type:
+    | 'institution'
+    | 'predecessor_instrument'
+    | 'instrument'
+    | 'evidence_document'
+    | 'verification'
+    | 'maturity_event'
+    | 'release_request'
+    | 'clearance'
+    | 'decision'
+    | 'audit_trail';
+  status: 'success' | 'warning' | 'error' | 'pending' | 'info';
+  metadata: Record<string, string | number | boolean | undefined>;
+}
+
+export interface ContinuityGraphEdge {
+  source: string;
+  target: string;
+  relationship:
+    | 'OWNS'
+    | 'HAS_DOCUMENT'
+    | 'VERIFIED_BY'
+    | 'SUPERSEDES'
+    | 'TRIGGERS_MATURITY'
+    | 'SUBMITS_RELEASE'
+    | 'REQUIRES_CLEARANCE'
+    | 'AUTHORIZED_BY'
+    | 'LOGGED_IN_AUDIT';
+  label: string;
+  unresolved?: boolean;
+}
+
+export interface ContinuityGraphData {
+  nodes: ContinuityGraphNode[];
+  edges: ContinuityGraphEdge[];
+}
+
+export interface CaseAssessment {
+  instrumentId: string;
+  evaluatedAt: string;
+  // The 5 Core Case Questions
+  q1_establishedEvidence: string[];
+  q2_unresolvedDependencies: string[];
+  q3_applicablePolicyClauses: string[];
+  q4_nextPermittedActions: NextActionTask[];
+  q5_stateProgressionGates: string[];
+  // Structured Sub-Evaluations
+  requirements: RequirementEvaluation[];
+  suitability: DocumentSuitabilityAssessment;
+  authenticity: InstrumentAuthenticityAssessment;
+  maturityStatus: {
+    daysLeft: number;
+    horizon: 'active_healthy' | 'impending_maturity' | 'critical_maturity_approaching' | 'matured_date_passed';
+    isMatured: boolean;
+    hasAutoRenewalClause: boolean;
+    renewalConfirmed: boolean;
+    warning?: string;
+  };
+  continuityGraph: ContinuityGraphData;
+}
+

@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth-context';
 import {
-  getInstruments, getVerifications, getFindings, getDocuments,
+  getInstrument, getInstruments, getVerifications, getFindings, getDocuments,
   updateVerificationStatus, updateInstrumentStatus, addObservation,
   escalateInstrument, formatINR, formatDate, formatDateTime
 } from '@/lib/store';
@@ -17,6 +17,7 @@ import {
   FileText, ExternalLink, ArrowRight, Eye, ShieldAlert, Sparkles,
   UserCheck, AlertCircle, Check, Info, FileCheck, Building2
 } from 'lucide-react';
+import FDRCaseAssessmentPanel from '@/components/case-assessment/FDRCaseAssessmentPanel';
 
 export default function VerificationWorkspacePage() {
   const { session, permissions } = useAuth();
@@ -283,6 +284,17 @@ export default function VerificationWorkspacePage() {
                   </div>
                 </div>
               )}
+
+              {/* FDR Evidence-to-Action Engine Case Assessment Panel */}
+              <div className="pt-2">
+                <FDRCaseAssessmentPanel
+                  instrument={selectedInstrument}
+                  documents={selectedDocs}
+                  predecessor={selectedInstrument.linkedPredecessorId ? getInstrument(selectedInstrument.linkedPredecessorId) : null}
+                  verifications={selectedVerifications}
+                  onRefresh={() => setRefreshKey(k => k + 1)}
+                />
+              </div>
 
               {/* Submitted vs Source Evidence Grid */}
               <div className="space-y-3">

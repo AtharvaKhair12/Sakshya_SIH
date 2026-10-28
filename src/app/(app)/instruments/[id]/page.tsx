@@ -21,6 +21,7 @@ import {
   ChevronRight, Upload, AlertCircle, FileCheck, ShieldAlert,
   History, Info, Download, Check, X, Shield, Plus
 } from 'lucide-react';
+import FDRCaseAssessmentPanel from '@/components/case-assessment/FDRCaseAssessmentPanel';
 
 const LIFECYCLE_STEPS: { key: InstrumentStatus; label: string }[] = [
   { key: 'submitted', label: 'Submitted' },
@@ -40,7 +41,7 @@ export default function InstrumentDetailPage() {
   const { session, permissions } = useAuth();
 
   const [refreshKey, setRefreshKey] = useState(0);
-  const [activeTab, setActiveTab] = useState<'overview' | 'evidence' | 'verification' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'engine' | 'overview' | 'evidence' | 'verification' | 'audit'>('engine');
 
   // Action Modals State
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -353,11 +354,12 @@ export default function InstrumentDetailPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b flex items-center gap-6" style={{ borderColor: 'var(--color-parchment)' }}>
+      <div className="border-b flex items-center gap-6 overflow-x-auto" style={{ borderColor: 'var(--color-parchment)' }}>
         {[
+          { key: 'engine', label: 'Evidence-to-Action Engine (APH 6.46)', icon: ShieldCheck },
           { key: 'overview', label: 'Instrument Overview', icon: FileText },
           { key: 'evidence', label: `Supporting Evidence (${documents.length})`, icon: Upload },
-          { key: 'verification', label: `Scrutiny & Findings (${findings.length + verifications.length})`, icon: ShieldCheck },
+          { key: 'verification', label: `Scrutiny & Findings (${findings.length + verifications.length})`, icon: ShieldAlert },
           { key: 'audit', label: `Traceable Audit Log (${auditEvents.length})`, icon: History },
         ].map(tab => {
           const Icon = tab.icon;
@@ -366,7 +368,7 @@ export default function InstrumentDetailPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${
+              className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
                 isActive
                   ? 'border-forest-600 text-forest-900 font-semibold'
                   : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -378,6 +380,21 @@ export default function InstrumentDetailPage() {
           );
         })}
       </div>
+
+      {/* Tab 0: FDR Evidence-to-Action Engine */}
+      {activeTab === 'engine' && (
+        <FDRCaseAssessmentPanel
+          instrument={instrument}
+          documents={documents}
+          predecessor={instrument.linkedPredecessorId ? getInstrument(instrument.linkedPredecessorId) : null}
+          replacement={instrument.linkedReplacementId ? getInstrument(instrument.linkedReplacementId) : null}
+          releaseRequest={releaseRequests[0] || null}
+          verifications={verifications}
+          lifecycleEvents={lifecycleEvents}
+          auditEvents={auditEvents}
+          onRefresh={() => setRefreshKey(k => k + 1)}
+        />
+      )}
 
       {/* Tab 1: Overview */}
       {activeTab === 'overview' && (

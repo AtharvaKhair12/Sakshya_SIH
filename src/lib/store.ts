@@ -218,6 +218,13 @@ function addAuditEvent(store: DemoStore, event: Omit<AuditEvent, 'id' | 'timesta
   return ae;
 }
 
+export function logAuditEvent(event: Omit<AuditEvent, 'id' | 'timestamp'>): AuditEvent {
+  const store = loadStore();
+  const ae = addAuditEvent(store, event);
+  saveStore(store);
+  return ae;
+}
+
 export function createInstrument(
   data: Omit<Instrument, 'id' | 'status' | 'verificationStatus' | 'updatedAt' | 'documents'> & {
     status?: InstrumentStatus;
