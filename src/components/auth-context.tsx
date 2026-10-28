@@ -213,9 +213,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    const newUserId = `user-${Date.now().toString().slice(-6)}`;
+    let registeredUserId = `user-${Date.now().toString().slice(-6)}`;
+
+    // 1. Create user in Supabase Auth & public.profiles via server API route
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: params.name,
+          email: cleanEmail,
+          password: params.password,
+          role: params.role,
+          institutionId: params.institutionId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Registration failed in Supabase.' };
+      }
+      if (data.user?.id) {
+        registeredUserId = data.user.id;
+      }
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e.message : 'Failed to reach registration server';
+      return { success: false, error: err };
+    }
+
     const newUser: User = {
-      id: newUserId,
+      id: registeredUserId,
       name: params.name.trim(),
       email: cleanEmail,
       role: params.role,
@@ -224,28 +251,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     };
 
-    // Attempt Supabase Auth signup if connected
+    // 2. Authenticate the Supabase browser client session
     try {
       const supabase = getBrowserSupabase();
       if (supabase) {
-        await supabase.auth.signUp({
+        await supabase.auth.signInWithPassword({
           email: cleanEmail,
           password: params.password,
-          options: {
-            data: {
-              display_name: params.name,
-              role: params.role,
-              institution_id: params.institutionId,
-            },
-          },
         });
       }
     } catch (e) {
-      console.warn('Supabase auth signup notice:', e);
+      console.warn('Browser sign-in notice:', e);
     }
 
     addUser(newUser);
-    login(newUserId, params.role, params.institutionId);
+    login(registeredUserId, params.role, params.institutionId);
     return { success: true };
   }, [login]);
 
