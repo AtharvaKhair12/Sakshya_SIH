@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-context';
 import { DEMO_CREDENTIALS, DEMO_INSTITUTIONS } from '@/lib/demo-data';
-import { Role } from '@/lib/types';
+import { Role, ROLE_LABELS } from '@/lib/types';
+import { normalizeRole } from '@/lib/permissions';
 import {
   Building2, Search, FileCheck, Eye, Settings,
   Clock, History, ArrowRight, ShieldCheck,
@@ -103,6 +104,7 @@ export default function LoginPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [mismatchRole, setMismatchRole] = useState<Role | null>(null);
   
   // Sign up form state
   const [signupName, setSignupName] = useState('');
@@ -131,6 +133,7 @@ export default function LoginPage() {
     setSignupInstitutionId(DEMO_INSTITUTIONS[0]?.id || 'inst-001');
     setLoginError(null);
     setSignupError(null);
+    setMismatchRole(null);
     setAuthTab('login');
     setAuthModalOpen(true);
   };
@@ -138,11 +141,15 @@ export default function LoginPage() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
+    setMismatchRole(null);
     setIsLoading(true);
-    const res = await loginWithPassword(loginEmail, loginPassword);
+    const res = await loginWithPassword(loginEmail, loginPassword, activeCred?.role);
     setIsLoading(false);
     if (!res.success) {
       setLoginError(res.error || 'Authentication failed. Please check credentials.');
+      if (res.actualRole) {
+        setMismatchRole(res.actualRole);
+      }
     } else {
       setAuthModalOpen(false);
       router.push('/dashboard');
@@ -503,9 +510,32 @@ export default function LoginPage() {
               {authTab === 'login' && (
                 <form onSubmit={handlePasswordLogin} className="space-y-4">
                   {loginError && (
-                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
-                      <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-red-600" />
-                      <span>{loginError}</span>
+                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-2.5">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-red-600" />
+                        <span className="leading-relaxed">{loginError}</span>
+                      </div>
+                      {mismatchRole && (
+                        <div className="pt-1 flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const targetCred = DEMO_CREDENTIALS.find(c => normalizeRole(c.role) === normalizeRole(mismatchRole));
+                              if (targetCred) {
+                                const curEmail = loginEmail;
+                                const curPass = loginPassword;
+                                handleOpenAuth(targetCred);
+                                setLoginEmail(curEmail);
+                                setLoginPassword(curPass);
+                              }
+                            }}
+                            className="text-[11px] font-semibold text-forest-800 bg-white border border-red-300 hover:bg-forest-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 shadow-2xs"
+                          >
+                            <span>Switch to {ROLE_LABELS[normalizeRole(mismatchRole)]} Portal</span>
+                            <ArrowRight size={12} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -517,7 +547,7 @@ export default function LoginPage() {
                       type="email"
                       required
                       value={loginEmail}
-                      onChange={(e) => { setLoginEmail(e.target.value); setLoginError(null); }}
+                      onChange={(e) => { setLoginEmail(e.target.value); setLoginError(null); setMismatchRole(null); }}
                       placeholder="e.g. officer@aicte.gov.in"
                       className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/40"
                     />
@@ -535,7 +565,7 @@ export default function LoginPage() {
                         type={showPassword ? 'text' : 'password'}
                         required
                         value={loginPassword}
-                        onChange={(e) => { setLoginPassword(e.target.value); setLoginError(null); }}
+                        onChange={(e) => { setLoginPassword(e.target.value); setLoginError(null); setMismatchRole(null); }}
                         placeholder="Enter password"
                         className="w-full text-xs px-3.5 py-2.5 pr-10 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-forest-600 focus:border-transparent transition-all bg-gray-50/40"
                       />

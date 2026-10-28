@@ -5,10 +5,11 @@
 // ============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, Role, Permission, ROLE_PERMISSIONS } from '@/lib/types';
+import { User, Role, Permission, ROLE_PERMISSIONS, ROLE_LABELS } from '@/lib/types';
 import { DemoSession, getSession, setSession, clearSession, getUser, getUsers, addUser } from '@/lib/store';
 import { DEMO_CREDENTIALS } from '@/lib/demo-data';
 import { getBrowserSupabase } from '@/lib/supabase/client';
+import { normalizeRole } from '@/lib/permissions';
 
 interface AuthContextType {
   user: User | null;
@@ -17,7 +18,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isDemoMode: boolean;
   login: (userId: string, role: Role, institutionId?: string) => void;
-  loginWithPassword: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithPassword: (
+    email: string,
+    password: string,
+    expectedRole?: Role
+  ) => Promise<{ success: boolean; error?: string; actualRole?: Role }>;
   signUp: (params: {
     name: string;
     email: string;
@@ -70,12 +75,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (u) setUser(u);
   }, []);
 
-  const loginWithPassword = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const loginWithPassword = useCallback(async (
+    email: string,
+    password: string,
+    expectedRole?: Role
+  ): Promise<{ success: boolean; error?: string; actualRole?: Role }> => {
     const cleanEmail = email.trim().toLowerCase();
     
     // Check demo credentials
     const cred = DEMO_CREDENTIALS.find((c) => c.email.toLowerCase() === cleanEmail);
     if (cred) {
+      // Role enforcement: reject if user is using the wrong role's login portal
+      if (expectedRole && normalizeRole(cred.role) !== normalizeRole(expectedRole)) {
+        const expectedLabel = ROLE_LABELS[normalizeRole(expectedRole)] || expectedRole;
+        const actualLabel = ROLE_LABELS[normalizeRole(cred.role)] || cred.role;
+        return {
+          success: false,
+          error: `Role mismatch: This account is registered as "${actualLabel}". You cannot sign in through the ${expectedLabel} portal.`,
+          actualRole: cred.role,
+        };
+      }
+
       if (cred.password !== password && password !== 'demo2025') {
         return { success: false, error: 'Incorrect password. Default demo password is demo2025.' };
       }
@@ -114,6 +134,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userRole = (data.user.user_metadata?.role as Role) || existingUser?.role || 'institution';
           const instId = data.user.user_metadata?.institution_id || existingUser?.institutionId || 'inst-001';
           
+          // Role enforcement for Supabase accounts
+          if (expectedRole && normalizeRole(userRole) !== normalizeRole(expectedRole)) {
+            const expectedLabel = ROLE_LABELS[normalizeRole(expectedRole)] || expectedRole;
+            const actualLabel = ROLE_LABELS[normalizeRole(userRole)] || userRole;
+            await supabase.auth.signOut();
+            return {
+              success: false,
+              error: `Role mismatch: This account is registered as "${actualLabel}". You cannot sign in through the ${expectedLabel} portal.`,
+              actualRole: userRole,
+            };
+          }
+
           if (!existingUser) {
             addUser({
               id: data.user.id,
@@ -135,6 +167,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (existingUser) {
+      if (expectedRole && normalizeRole(existingUser.role) !== normalizeRole(expectedRole)) {
+        const expectedLabel = ROLE_LABELS[normalizeRole(expectedRole)] || expectedRole;
+        const actualLabel = ROLE_LABELS[normalizeRole(existingUser.role)] || existingUser.role;
+        return {
+          success: false,
+          error: `Role mismatch: This account is registered as "${actualLabel}". You cannot sign in through the ${expectedLabel} portal.`,
+          actualRole: existingUser.role,
+        };
+      }
+
       login(existingUser.id, existingUser.role, existingUser.institutionId);
       return { success: true };
     }
@@ -151,10 +193,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = params.email.trim().toLowerCase();
 
-    // Check if user already exists
+    // Check if user already exists in demo credentials or store
+    const inDemoCreds = DEMO_CREDENTIALS.find(c => c.email.toLowerCase() === cleanEmail);
+    if (inDemoCreds) {
+      const existingRoleLabel = ROLE_LABELS[normalizeRole(inDemoCreds.role)] || inDemoCreds.role;
+      return {
+        success: false,
+        error: `An account with this email already exists under the "${existingRoleLabel}" role. Please sign in via the ${existingRoleLabel} portal.`
+      };
+    }
+
     const allUsers = getUsers();
-    if (allUsers.some(u => u.email.toLowerCase() === cleanEmail)) {
-      return { success: false, error: 'An account with this email address already exists. Please sign in.' };
+    const existingUser = allUsers.find(u => u.email.toLowerCase() === cleanEmail);
+    if (existingUser) {
+      const existingRoleLabel = ROLE_LABELS[normalizeRole(existingUser.role)] || existingUser.role;
+      return {
+        success: false,
+        error: `An account with this email already exists under the "${existingRoleLabel}" role. Please sign in via the ${existingRoleLabel} portal.`
+      };
     }
 
     const newUserId = `user-${Date.now().toString().slice(-6)}`;
