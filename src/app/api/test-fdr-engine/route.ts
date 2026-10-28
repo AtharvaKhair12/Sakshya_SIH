@@ -1,7 +1,7 @@
 // ============================================================================
 // SAKSHYA PS 1 — FDR EVIDENCE-TO-ACTION ENGINE AUTOMATED TEST SUITE
 // Rigorous verification of:
-// 1. 11 Source-Grounded Regulatory Rule Fixtures (AICTE APH 2024–2027 Clause 6.46 & 1.4)
+// 1. 11 Source-Grounded Regulatory Rule Fixtures (AICTE APH 2024–2027 Clause 6.46(a)(i)–(iv), Clause 6.46(b)(i), Clause 1.12 Table 1.4)
 // 2. Real Document Intelligence (Classification, Field Extraction, Provenance, Masking)
 // 3. Assessment A (Document Suitability) vs Assessment B (Instrument Authenticity)
 // 4. Runtime Maturity & Renewal Intelligence (Auto-renewal non-proof invariant)
@@ -229,17 +229,17 @@ export async function GET(req: Request) {
     const req4 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-EOA-04' || r.legacyRuleId === 'RULE-APH-6.46.4');
     const req5 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-CLR-05' || r.legacyRuleId === 'RULE-APH-6.46.5');
 
-    if (req1?.status !== 'satisfied') throw new Error(`Rule 6.46.a(1) not satisfied: got ${req1?.status}`);
-    if (req2?.status !== 'satisfied') throw new Error(`Rule 6.46.a(2) not satisfied: got ${req2?.status}`);
-    if (req3?.status !== 'satisfied') throw new Error(`Rule 6.46.a(3) not satisfied: got ${req3?.status}`);
-    if (req4?.status !== 'satisfied') throw new Error(`Rule 6.46.a(4) not satisfied: got ${req4?.status}`);
-    if (req5?.status !== 'satisfied') throw new Error(`Rule 6.46.b not satisfied: got ${req5?.status}`);
+    if (req1?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(i) not satisfied: got ${req1?.status}`);
+    if (req2?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(ii) not satisfied: got ${req2?.status}`);
+    if (req3?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(iii) not satisfied: got ${req3?.status}`);
+    if (req4?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(iv) not satisfied: got ${req4?.status}`);
+    if (req5?.status !== 'satisfied') throw new Error(`Rule 6.46(b)(i) not satisfied: got ${req5?.status}`);
 
-    if (req1.clauseRef !== 'Clause 6.46.a(1)') throw new Error(`Expected Clause 6.46.a(1), got ${req1.clauseRef}`);
-    if (!req2.clauseRef.includes('6.46.a(2)')) throw new Error(`Expected Clause 6.46.a(2), got ${req2.clauseRef}`);
-    if (req3.clauseRef !== 'Clause 6.46.a(3)') throw new Error(`Expected Clause 6.46.a(3), got ${req3.clauseRef}`);
-    if (req4.clauseRef !== 'Clause 6.46.a(4)') throw new Error(`Expected Clause 6.46.a(4), got ${req4.clauseRef}`);
-    if (req5.clauseRef !== 'Clause 6.46.b') throw new Error(`Expected Clause 6.46.b, got ${req5.clauseRef}`);
+    if (req1.clauseRef !== 'Clause 6.46(a)(i)') throw new Error(`Expected Clause 6.46(a)(i), got ${req1.clauseRef}`);
+    if (!req2.clauseRef.includes('6.46(a)(ii)')) throw new Error(`Expected Clause 6.46(a)(ii), got ${req2.clauseRef}`);
+    if (req3.clauseRef !== 'Clause 6.46(a)(iii)') throw new Error(`Expected Clause 6.46(a)(iii), got ${req3.clauseRef}`);
+    if (req4.clauseRef !== 'Clause 6.46(a)(iv)') throw new Error(`Expected Clause 6.46(a)(iv), got ${req4.clauseRef}`);
+    if (req5.clauseRef !== 'Clause 6.46(b)(i)') throw new Error(`Expected Clause 6.46(b)(i), got ${req5.clauseRef}`);
   });
 
   // Fixture 2: Missing Request Letter
@@ -254,7 +254,7 @@ export async function GET(req: Request) {
     });
 
     const req1 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-REQ-01' || r.legacyRuleId === 'RULE-APH-6.46.1');
-    if (req1?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(1), got ${req1?.status}`);
+    if (req1?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46(a)(i), got ${req1?.status}`);
 
     const hasBlocker = assessment.q2_unresolvedDependencies.some(d => d.includes('Formal Institution Release Application Letter'));
     if (!hasBlocker) throw new Error('Expected unresolved dependency for RULE-REL-REQ-01 in Q2');
@@ -276,7 +276,7 @@ export async function GET(req: Request) {
     });
 
     const req2 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-AFF-02' || r.legacyRuleId === 'RULE-APH-6.46.2');
-    if (req2?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(2), got ${req2?.status}`);
+    if (req2?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46(a)(ii), got ${req2?.status}`);
     if (!req2.clauseRef.includes('6.46')) throw new Error(`Expected Clause 6.46 reference, got ${req2.clauseRef}`);
 
     const task = assessment.q4_nextPermittedActions.find(t => t.ruleId === 'RULE-REL-AFF-02' || t.ruleId === 'RULE-APH-6.46.2');
@@ -296,7 +296,7 @@ export async function GET(req: Request) {
     });
 
     const req3 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-FDR-03' || r.legacyRuleId === 'RULE-APH-6.46.3');
-    if (req3?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(3), got ${req3?.status}`);
+    if (req3?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46(a)(iii), got ${req3?.status}`);
   });
 
   // Fixture 5: Missing Latest LoA/EoA
@@ -311,7 +311,7 @@ export async function GET(req: Request) {
     });
 
     const req4 = assessment.requirements.find(r => r.ruleId === 'RULE-REL-EOA-04' || r.legacyRuleId === 'RULE-APH-6.46.4');
-    if (req4?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46.a(4), got ${req4?.status}`);
+    if (req4?.status !== 'missing') throw new Error(`Expected status 'missing' for 6.46(a)(iv), got ${req4?.status}`);
   });
 
   // Fixture 6: Required Clearance Not Recorded
@@ -480,10 +480,10 @@ export async function GET(req: Request) {
       }
     }
 
-    // 2. Deposit creation proof rule (RULE-REL-FDR-03) must strictly cite Clause 6.46.a(3)
+    // 2. Deposit creation proof rule (RULE-REL-FDR-03) must strictly cite Clause 6.46(a)(iii)
     const fdrRule = AICTE_REGULATORY_RULES.find(r => r.id === 'RULE-REL-FDR-03');
-    if (!fdrRule || fdrRule.clauseReference !== 'Clause 6.46.a(3)') {
-      throw new Error(`RULE-REL-FDR-03 must cite Clause 6.46.a(3), got ${fdrRule?.clauseReference}`);
+    if (!fdrRule || fdrRule.clauseReference !== 'Clause 6.46(a)(iii)') {
+      throw new Error(`RULE-REL-FDR-03 must cite Clause 6.46(a)(iii), got ${fdrRule?.clauseReference}`);
     }
 
     // 3. Uniqueness reconciliation check must NOT cite Clause 1.4.5
@@ -525,14 +525,14 @@ export async function GET(req: Request) {
   });
 
   // REG-03: Actual release-procedure references match official handbook hierarchy
-  recordTest('Regulatory Regression', 'REG-03', 'Release procedure references match official APH 2024-2027 hierarchy (6.46.a(1-4), 6.46.b)', () => {
+  recordTest('Regulatory Regression', 'REG-03', 'Release procedure references match official APH 2024-2027 hierarchy (Clause 6.46(a)(i)-(iv), Clause 6.46(b)(i), Clause 1.12 Table 1.4)', () => {
     const expectedHierarchy: Record<string, string> = {
-      'RULE-REL-REQ-01': 'Clause 6.46.a(1)',
-      'RULE-REL-AFF-02': 'Clause 6.46.a(2) & Appendix 8 (Affidavit 6)',
-      'RULE-REL-FDR-03': 'Clause 6.46.a(3)',
-      'RULE-REL-EOA-04': 'Clause 6.46.a(4)',
-      'RULE-REL-CLR-05': 'Clause 6.46.b',
-      'RULE-REL-TENOR-06': 'Chapter I, Section 1.4 (Table 1.4) & Clause 6.46',
+      'RULE-REL-REQ-01': 'Clause 6.46(a)(i)',
+      'RULE-REL-AFF-02': 'Clause 6.46(a)(ii) & Appendix 8 (Affidavit 6)',
+      'RULE-REL-FDR-03': 'Clause 6.46(a)(iii)',
+      'RULE-REL-EOA-04': 'Clause 6.46(a)(iv)',
+      'RULE-REL-CLR-05': 'Clause 6.46(b)(i)',
+      'RULE-REL-TENOR-06': 'AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4',
       'RULE-REL-CLOSE-07': 'Chapter III (Closure Guidelines) & Clause 6.46',
     };
 
@@ -614,11 +614,18 @@ export async function GET(req: Request) {
     if (adviceSuitability.status !== 'conditionally_suitable') {
       throw new Error(`Expected conditionally_suitable, got ${adviceSuitability.status}`);
     }
+    if (!adviceSuitability.rationale.includes('candidate supporting document')) {
+      throw new Error(`Expected candidate supporting document classification: ${adviceSuitability.rationale}`);
+    }
     if (!adviceSuitability.rationale.includes('operational manual-review check')) {
       throw new Error(`Expected rationale to designate Joint Holder NA as an operational check: ${adviceSuitability.rationale}`);
     }
-    if (!adviceSuitability.rationale.includes('not as a confirmed regulatory violation')) {
-      throw new Error(`Must explicitly affirm that this is not a confirmed regulatory violation: ${adviceSuitability.rationale}`);
+    if (!adviceSuitability.rationale.includes('Appendix 8 / Affidavit 6')) {
+      throw new Error(`Expected Appendix 8 / Affidavit 6 reference: ${adviceSuitability.rationale}`);
+    }
+    if (!adviceSuitability.rationale.includes('not as an automated fraud determination or conclusive violation') &&
+        !adviceSuitability.rationale.includes('not as a confirmed regulatory violation')) {
+      throw new Error(`Must explicitly affirm that this is not an automated fraud determination or conclusive violation: ${adviceSuitability.rationale}`);
     }
   });
 

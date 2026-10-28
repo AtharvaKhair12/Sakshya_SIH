@@ -114,7 +114,7 @@ export function reconcileInstrumentEvidence(
         submittedSource: 'Instrument Record',
         comparisonSource: `${extractionData?.fileName || 'Uploaded Evidence'}`,
         differenceDetected: true,
-        whyItMatters: 'Statutory security deposit amounts must strictly match the Approval Process Handbook prescribed minimums (Chapter I, Table 1.4).',
+        whyItMatters: 'Statutory security deposit amounts must strictly match the Approval Process Handbook prescribed minimums (AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4).',
         ruleId: 'RULE-APH-01',
         severity: 'critical',
         suggestedAction: 'Flag for financial discrepancy review. Verify whether part payment was made or wrong document was attached.',

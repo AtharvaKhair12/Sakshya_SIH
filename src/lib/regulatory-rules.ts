@@ -1,8 +1,9 @@
 // ============================================================================
 // Sakshya PS 1 — Source-Grounded Regulatory Rule Engine
 // Authoritative rules grounded in AICTE Approval Process Handbook (APH 2024–2027)
-// Specifically Clause 6.46 (Release of Security Deposit / FDR: 6.46.a(1-4), 6.46.b),
-// Chapter I, Section 1.4 (Table 1.4 - Deposit Norms), and Chapter III (Closure Norms).
+// Specifically Clause 6.46(a)(i)–(iv), Clause 6.46(b)(i),
+// Chapter I, Clause 1.12 — Security Deposit (Table 1.4 - Deposit Norms),
+// and Chapter III (Closure Norms).
 // Note: Internal workflow controls and administrative guidelines are explicitly
 // distinguished from statutory handbook clauses.
 // Official Source: https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf
@@ -58,7 +59,7 @@ export interface RuleEvaluationContext {
 // ----------------------------------------------------------------------------
 
 export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
-  // 1. Formal Application Letter — Clause 6.46.a(1)
+  // 1. Formal Application Letter — Clause 6.46(a)(i)
   {
     id: 'RULE-REL-REQ-01',
     legacyId: 'RULE-APH-6.46.1',
@@ -68,16 +69,16 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.a(1)',
-    pageReference: 'Chapter VI, Clause 6.46.a(1) (pp. 112–114)',
-    description: 'Institution must submit an official application on official letterhead duly signed by the Chairman/President or authorized signatory of the Trust/Society/Company requesting release of Security Deposit / FDR.',
+    clauseReference: 'Clause 6.46(a)(i)',
+    pageReference: 'Chapter VI, Clause 6.46(a)(i)',
+    description: 'Institution must submit an official application on official letterhead duly signed by the Chairman/President or authorized signatory of the Trust/Society/Company requesting release of Security Deposit / FDR under Clause 6.46(a)(i).',
     applicabilityCondition: 'Mandatory for all FDR release and security deposit refund requests.',
     requiredEvidence: 'Document classified as "release_request_letter" or formal application upload.',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const hasLetter = ctx.documents.some(d =>
         d.documentType === 'application_form' ||
@@ -90,7 +91,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-REQ-01',
           legacyRuleId: 'RULE-APH-6.46.1',
-          clauseRef: 'Clause 6.46.a(1)',
+          clauseRef: 'Clause 6.46(a)(i)',
           title: 'Formal Institution Release Application Letter',
           status: 'satisfied',
           explanation: 'Formal release application letter is present in submitted case documentation.',
@@ -104,7 +105,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-REQ-01',
         legacyRuleId: 'RULE-APH-6.46.1',
-        clauseRef: 'Clause 6.46.a(1)',
+        clauseRef: 'Clause 6.46(a)(i)',
         title: 'Formal Institution Release Application Letter',
         status: 'missing',
         explanation: 'Official application letter from Chairman/President requesting FDR release is not attached to this case file.',
@@ -115,7 +116,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 2. Notarized Affidavit 6 — Clause 6.46.a(2) & Appendix 8
+  // 2. Notarized Affidavit 6 — Clause 6.46(a)(ii) & Appendix 8
   {
     id: 'RULE-REL-AFF-02',
     legacyId: 'RULE-APH-6.46.2',
@@ -125,8 +126,8 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.a(2) & Appendix 8 (Affidavit 6)',
-    pageReference: 'Chapter VI, Clause 6.46.a(2) & Appendix 8, Format Affidavit 6',
+    clauseReference: 'Clause 6.46(a)(ii) & Appendix 8 (Affidavit 6)',
+    pageReference: 'Chapter VI, Clause 6.46(a)(ii) & Appendix 8, Format Affidavit 6',
     description: 'Submission of Affidavit 6 on non-judicial stamp paper, duly sworn before a First Class Judicial Magistrate or Public Notary, detailing Trust/Society particulars, FDR receipt numbers, and certifying zero outstanding dues to students, faculty, or staff.',
     applicabilityCondition: 'Mandatory for all release/refund workflows prior to scrutiny sign-off.',
     requiredEvidence: 'Document classified as "affidavit" or containing notarized Affidavit 6 structure.',
@@ -134,7 +135,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const hasAffidavit = ctx.documents.some(d =>
         d.documentType === 'affidavit' ||
@@ -146,7 +147,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-AFF-02',
           legacyRuleId: 'RULE-APH-6.46.2',
-          clauseRef: 'Clause 6.46.a(2)',
+          clauseRef: 'Clause 6.46(a)(ii)',
           title: 'Notarized Affidavit 6 Declaration with FDR Schedule',
           status: 'satisfied',
           explanation: 'Statutory Affidavit 6 is attached and verified in the case file.',
@@ -160,7 +161,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-AFF-02',
         legacyRuleId: 'RULE-APH-6.46.2',
-        clauseRef: 'Clause 6.46.a(2)',
+        clauseRef: 'Clause 6.46(a)(ii)',
         title: 'Notarized Affidavit 6 Declaration with FDR Schedule',
         status: 'missing',
         explanation: 'Affidavit 6 (Statutory Release Declaration) not found in the case record. Case cannot proceed to Senior Officer decision.',
@@ -171,26 +172,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 3. Original FDR / Deposit Advice / Payment Proof — Clause 6.46.a(3)
+  // 3. Original FDR / Deposit Creation Evidence — Clause 6.46(a)(iii)
   {
     id: 'RULE-REL-FDR-03',
     legacyId: 'RULE-APH-6.46.3',
     code: 'REL-FDR-03',
-    title: 'Copy of FDR or Bank Deposit Advice Suitability',
+    title: 'Copy of FDR or Bank Deposit Creation Evidence',
     category: 'Document Suitability',
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.a(3)',
-    pageReference: 'Chapter VI, Clause 6.46.a(3)',
-    description: 'Submission of copy of the Fixed Deposit Receipt (FDR), Demand Draft, or online payment receipt evidencing creation of the Security Deposit. Note: A bank document titled "Deposit Advice" is acceptable as valid evidence of deposit creation under Clause 6.46.a(3), but requires scrutiny review for completeness and subsequent post-maturity renewal confirmation.',
+    clauseReference: 'Clause 6.46(a)(iii)',
+    pageReference: 'Chapter VI, Clause 6.46(a)(iii)',
+    description: 'Submission of copy of the Fixed Deposit Receipt (FDR), Demand Draft, or online payment receipt evidencing creation of the Security Deposit under Clause 6.46(a)(iii). Note: A bank document titled "Deposit Advice" is classified as a candidate supporting document requiring review against Clause 6.46(a)(iii) and branch verification, rather than an explicit statutory equivalent.',
     applicabilityCondition: 'Mandatory proof of instrument creation for all verification and release operations.',
     requiredEvidence: 'Document classified as "fdr_certificate" or "deposit_advice" or "payment_proof".',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const fdrDoc = ctx.documents.find(d =>
         d.documentType === 'fdr_certificate' ||
@@ -203,10 +204,10 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-FDR-03',
           legacyRuleId: 'RULE-APH-6.46.3',
-          clauseRef: 'Clause 6.46.a(3)',
-          title: 'Copy of FDR or Bank Deposit Advice Suitability',
+          clauseRef: 'Clause 6.46(a)(iii)',
+          title: 'Copy of FDR or Bank Deposit Creation Evidence',
           status: 'missing',
-          explanation: 'No FDR Certificate or Bank Deposit Advice found in the document dossier.',
+          explanation: 'No FDR Certificate or Bank Deposit creation evidence found in the document dossier.',
           responsibleRole: 'institution',
           severity: 'critical',
           isOfficialRule: true,
@@ -219,11 +220,11 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-FDR-03',
           legacyRuleId: 'RULE-APH-6.46.3',
-          clauseRef: 'Clause 6.46.a(3)',
-          title: 'Copy of FDR or Bank Deposit Advice Suitability',
-          status: 'satisfied',
-          explanation: 'Document classified as "Bank Deposit Advice". Suitability assessment: Acceptable as evidence of deposit creation under Clause 6.46.a(3); requires scrutiny review and branch verification.',
-          evidenceReference: `Deposit Advice: ${fdrDoc.fileName}`,
+          clauseRef: 'Clause 6.46(a)(iii)',
+          title: 'Copy of FDR or Bank Deposit Creation Evidence',
+          status: 'awaiting_confirmation',
+          explanation: 'Document classified as "Bank Deposit Advice". Note: Deposit Advice is a candidate supporting document requiring scrutiny review against Clause 6.46(a)(iii) and independent branch verification, rather than statutory proof of an FDR.',
+          evidenceReference: `Candidate Document: ${fdrDoc.fileName}`,
           responsibleRole: 'scrutiny_officer',
           severity: 'info',
           isOfficialRule: true,
@@ -233,8 +234,8 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-FDR-03',
         legacyRuleId: 'RULE-APH-6.46.3',
-        clauseRef: 'Clause 6.46.a(3)',
-        title: 'Copy of FDR or Bank Deposit Advice Suitability',
+        clauseRef: 'Clause 6.46(a)(iii)',
+        title: 'Copy of FDR or Bank Deposit Creation Evidence',
         status: 'satisfied',
         explanation: 'FDR Certificate is present and verified for basic structural compliance.',
         evidenceReference: `Instrument Document: ${fdrDoc.fileName}`,
@@ -245,7 +246,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 4. Latest LoA / EoA — Clause 6.46.a(4)
+  // 4. Latest LoA / EoA — Clause 6.46(a)(iv)
   {
     id: 'RULE-REL-EOA-04',
     legacyId: 'RULE-APH-6.46.4',
@@ -255,8 +256,8 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.a(4)',
-    pageReference: 'Chapter VI, Clause 6.46.a(4)',
+    clauseReference: 'Clause 6.46(a)(iv)',
+    pageReference: 'Chapter VI, Clause 6.46(a)(iv)',
     description: 'Copy of the latest Extension of Approval (EoA) or Letter of Approval issued by AICTE verifying continuous approval status or closure authorization.',
     applicabilityCondition: 'Mandatory to substantiate regulatory standing of the applicant institution.',
     requiredEvidence: 'Document classified as "eoa_loa" or official approval letter upload.',
@@ -264,7 +265,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const hasEoa = ctx.documents.some(d =>
         d.fileName.toLowerCase().includes('eoa') ||
@@ -276,7 +277,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-EOA-04',
           legacyRuleId: 'RULE-APH-6.46.4',
-          clauseRef: 'Clause 6.46.a(4)',
+          clauseRef: 'Clause 6.46(a)(iv)',
           title: 'Latest Letter of Approval (LoA) / Extension of Approval (EoA)',
           status: 'satisfied',
           explanation: 'Latest AICTE approval order (EoA/LoA) is attached to the case file.',
@@ -290,7 +291,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-EOA-04',
         legacyRuleId: 'RULE-APH-6.46.4',
-        clauseRef: 'Clause 6.46.a(4)',
+        clauseRef: 'Clause 6.46(a)(iv)',
         title: 'Latest Letter of Approval (LoA) / Extension of Approval (EoA)',
         status: 'missing',
         explanation: 'Latest EoA / LoA document not found in the case record. Request from institution.',
@@ -301,7 +302,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 5. Internal Cell Clearances (PGRC, Vigilance, Regional Office) — Clause 6.46.b
+  // 5. Internal Cell Clearances (PGRC, Vigilance, Regional Office) — Clause 6.46(b)(i)
   {
     id: 'RULE-REL-CLR-05',
     legacyId: 'RULE-APH-6.46.5',
@@ -311,8 +312,8 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46.b',
-    pageReference: 'Chapter VI, Clause 6.46.b',
+    clauseReference: 'Clause 6.46(b)(i)',
+    pageReference: 'Chapter VI, Clause 6.46(b)(i)',
     description: 'Clearances must be confirmed from Public Grievance Redressal Cell (PGRC), Vigilance Bureau, Legal Bureau, and Regional Office confirming zero pending student/faculty liabilities, inquiries, or judicial injunctions.',
     applicabilityCondition: 'Mandatory administrative clearance prior to Senior Officer approval.',
     requiredEvidence: 'Internal clearance record logged by authorized scrutiny or cell officer.',
@@ -320,7 +321,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const clearanceDoc = ctx.documents.some(d =>
         d.fileName.toLowerCase().includes('clearance') ||
@@ -336,7 +337,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-CLR-05',
           legacyRuleId: 'RULE-APH-6.46.5',
-          clauseRef: 'Clause 6.46.b',
+          clauseRef: 'Clause 6.46(b)(i)',
           title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
           status: 'satisfied',
           explanation: 'Bureau and cell clearances (PGRC, Vigilance, Regional Office) recorded and verified.',
@@ -350,7 +351,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-CLR-05',
         legacyRuleId: 'RULE-APH-6.46.5',
-        clauseRef: 'Clause 6.46.b',
+        clauseRef: 'Clause 6.46(b)(i)',
         title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
         status: 'awaiting_confirmation',
         explanation: 'Clearance record from PGRC / Vigilance Cell is not recorded in the available system data. (Note: Missing record means clearance is unrecorded, not that it was rejected).',
@@ -361,26 +362,26 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 6. Mandatory 10-Year Security Deposit Retention & Renewal Verification — Table 1.4 & Clause 6.46
+  // 6. Mandatory 10-Year Security Deposit Retention & Renewal Verification — Clause 1.12, Table 1.4
   {
     id: 'RULE-REL-TENOR-06',
     legacyId: 'RULE-APH-6.46.6',
     code: 'REL-TENOR-06',
     title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
     category: 'Maturity & Tenor',
-    sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
+    sourceDocument: 'AICTE Approval Process Handbook 2024–2027',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Chapter I, Section 1.4 (Table 1.4) & Clause 6.46',
-    pageReference: 'Chapter I, Table 1.4 & Chapter VI, Clause 6.46',
-    description: 'Security Deposit must be maintained for the mandatory statutory tenor of 10 years (or applicable term specified in Table 1.4) and returned on completion of the term subject to Clause 6.46 conditions. If maturity date has passed, an auto-renewal clause in an old deposit advice is NOT proof of actual renewal; updated renewal receipt or current bank statement is mandatory.',
+    clauseReference: 'AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4',
+    pageReference: 'Chapter I, Clause 1.12, Table 1.4 & Chapter VI, Clause 6.46',
+    description: 'Security Deposit must be maintained for the mandatory statutory tenor of 10 years (or applicable term specified in Clause 1.12, Table 1.4) and returned on completion of the term subject to Clause 6.46 conditions. If maturity date has passed, an auto-renewal clause in an old deposit advice is NOT proof of actual renewal; updated renewal receipt or current bank statement is mandatory.',
     applicabilityCondition: 'Applicable to all maturing or release-seeking instruments.',
     requiredEvidence: 'Instrument maturity date & renewal proof where maturity date is in the past.',
     severity: 'critical',
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const now = ctx.currentDate || new Date();
       const matDate = new Date(ctx.instrument.maturityDate);
@@ -390,7 +391,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-TENOR-06',
           legacyRuleId: 'RULE-APH-6.46.6',
-          clauseRef: 'Table 1.4 & Clause 6.46',
+          clauseRef: 'Clause 1.12 (Table 1.4) & Clause 6.46',
           title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
           status: 'satisfied',
           explanation: `Instrument is within active tenor (Maturity Date: ${ctx.instrument.maturityDate}). No overdue maturity condition exists.`,
@@ -412,7 +413,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-TENOR-06',
           legacyRuleId: 'RULE-APH-6.46.6',
-          clauseRef: 'Table 1.4 & Clause 6.46',
+          clauseRef: 'Clause 1.12 (Table 1.4) & Clause 6.46',
           title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
           status: 'satisfied',
           explanation: 'Maturity date passed, but valid renewal / replacement evidence is recorded and under monitoring.',
@@ -426,7 +427,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-TENOR-06',
         legacyRuleId: 'RULE-APH-6.46.6',
-        clauseRef: 'Table 1.4 & Clause 6.46',
+        clauseRef: 'Clause 1.12 (Table 1.4) & Clause 6.46',
         title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
         status: 'stale',
         explanation: `Maturity date (${ctx.instrument.maturityDate}) has passed. Notice: Auto-renewal instructions in historical documents do NOT establish that renewal occurred. Updated bank renewal confirmation is required.`,
@@ -456,7 +457,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'official_verified',
     reviewedBy: 'AICTE Regulatory Affairs Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 2,
+    version: 3,
     evaluate: (ctx) => {
       if (!ctx.isProgressiveClosure) {
         return {
@@ -525,7 +526,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'draft_awaiting_review',
     reviewedBy: 'AICTE Vigilance Review Taskforce',
     lastReviewedDate: '2026-10-28',
-    version: 2,
+    version: 3,
     evaluate: (ctx) => {
       const hasDiscrepancy = ctx.hasEmbezzlementInquiry || ctx.instrument.status === 'discrepancy_flagged';
 
@@ -596,7 +597,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'workflow_control',
     reviewedBy: 'Sakshya System Architecture Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       if (!ctx.releaseRequest) {
         return {
@@ -660,7 +661,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     reviewStatus: 'workflow_control',
     reviewedBy: 'Sakshya System Architecture Review Team',
     lastReviewedDate: '2026-10-28',
-    version: 3,
+    version: 4,
     evaluate: (ctx) => {
       const isReplacement = ctx.instrument.status === 'replacement_submitted' || ctx.instrument.linkedPredecessorId;
 

@@ -371,11 +371,11 @@ export function assessDocumentSuitability(
 
     let rationale = '';
     if (hasExplicitAiCtePledge) {
-      rationale = 'Document is classified as Bank Deposit Advice with explicit joint AICTE pledge endorsement. Suitable as secondary evidence of deposit creation under AICTE APH Clause 6.46.a(3); requires scrutiny verification.';
+      rationale = 'Document is classified as Bank Deposit Advice with explicit joint AICTE pledge endorsement. Classified as candidate supporting document requiring review against Clause 6.46(a)(iii) and independent branch verification, rather than an explicit statutory FDR equivalent.';
     } else if (isJointNotApplicable) {
-      rationale = 'Document is classified as Bank Deposit Advice. Acceptable as deposit creation evidence under Clause 6.46.a(3). Note: Advice face indicates Joint Holder as "Not Applicable". This is logged as an operational manual-review check (to confirm whether a separate bank lien letter was issued to AICTE), not as a confirmed regulatory violation.';
+      rationale = 'Document is classified as Bank Deposit Advice (candidate supporting document requiring review against Clause 6.46(a)(iii) rather than statutory equivalence). Note: Advice face indicates Joint Holder as "Not Applicable". This is retained as an operational manual-review check to reference Appendix 8 / Affidavit 6 for the joint-name declaration, not as an automated fraud determination or conclusive violation.';
     } else {
-      rationale = 'Document is classified as Bank Deposit Advice. Acceptable as deposit creation evidence under Clause 6.46.a(3); scrutiny review required to verify bank lien / pledge status.';
+      rationale = 'Document is classified as Bank Deposit Advice (candidate supporting document requiring scrutiny review against Clause 6.46(a)(iii) and independent branch verification).';
     }
 
     return {

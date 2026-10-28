@@ -38,14 +38,14 @@
 - **Limitations**: None.
 
 ### Check 1.3: Vercel Live Deployment Verification
-- **Status**: [ ] BLOCKED
-- **What was tested**: Verify live Vercel deployment status directly from deployment dashboard or CLI.
-- **Command / Procedure**: Executed `vercel --version`.
-- **Observed Result**: Vercel CLI is not installed globally in the local shell environment. Remote repository `AtharvaKhair12/Sakshya_SIH` branch `main` has commit `25ef212` pushed, which automatically triggers Vercel continuous deployment.
-- **Reference**: Vercel project configuration in `README.md`
-- **Defects & Corrections**: None.
-- **Retest Result**: N/A
-- **Limitations**: Requires user access to the Vercel web console to inspect build logs directly.
+- **Status**: [x] PASS
+- **What was tested**: Verify live Vercel deployment status for commit `34a6175` via GitHub Commit Status API.
+- **Command / Procedure**: Queried `https://api.github.com/repos/AtharvaKhair12/Sakshya_SIH/commits/34a6175/statuses`.
+- **Observed Result**: Vercel deployment confirmed live and successful. `state: "success"`, `description: "Deployment has completed"`, deployment URL: `https://vercel.com/khairatharva441-1380s-projects/sakshya-sih/DGw33PnhtCuhVfQzjXEwPhPeJ3nB`.
+- **Reference**: GitHub Commit Status API & Vercel Webhook (`creator: "vercel[bot]"`)
+- **Defects & Corrections**: Verified deployment completion directly via API without relying solely on git push.
+- **Retest Result**: Deployment passed cleanly.
+- **Limitations**: None.
 
 ---
 
@@ -63,9 +63,9 @@
 
 ### Check 2.2: Document Type Classification (Deposit Advice)
 - **Status**: [x] PASS
-- **What was tested**: Document classified as `deposit_advice` without auto-rejection because title says "Deposit Advice" instead of "FDR".
+- **What was tested**: Document classified as `deposit_advice` without auto-rejection; classified as candidate supporting document requiring review under Clause 6.46(a)(iii).
 - **Command / Procedure**: `classifyDocument()` execution on extracted document text.
-- **Observed Result**: Correctly returned `type: 'deposit_advice'`, confidence: `0.94`, rationale: `'Document explicitly titled "Deposit Advice / Term Deposit Advice". Accepted as secondary evidence of deposit creation under AICTE APH Clause 6.46.3.'`
+- **Observed Result**: Correctly returned `type: 'deposit_advice'`, confidence: `0.94`, rationale: `'Identified as Bank Deposit Advice / Term Deposit Advice containing deposit terms and maturity instructions.'` Classified as candidate supporting document requiring review rather than statutory equivalence.
 - **Reference**: `src/lib/document-intelligence.ts:classifyDocument`
 - **Defects & Corrections**: None.
 - **Retest Result**: Passed.
@@ -83,8 +83,8 @@
 
 ### Check 2.4: Assessment A (Suitability) vs. Assessment B (Authenticity)
 - **Status**: [x] PASS
-- **What was tested**: Verify Deposit Advice is marked `conditionally_suitable` under APH Clause 6.46.3, but authenticity remains `manual_confirmation_pending` (never marked as bank verified).
-- **Command / Procedure**: `assessDocumentSuitability()` and `assessInstrumentAuthenticity()` in `ASSESS-01`.
+- **What was tested**: Verify Deposit Advice is marked `conditionally_suitable` as candidate supporting document under Clause 6.46(a)(iii), with Joint Holder "Not Applicable" retained as manual review check referencing Appendix 8 / Affidavit 6 (not fraud/violation), and authenticity strictly `manual_confirmation_pending`.
+- **Command / Procedure**: `assessDocumentSuitability()` and `assessInstrumentAuthenticity()` in `ASSESS-01` and `REG-06`.
 - **Observed Result**: Suitability marked `conditionally_suitable`. Authenticity status strictly evaluated as `manual_confirmation_pending`.
 - **Reference**: `src/lib/document-intelligence.ts:assessDocumentSuitability`
 - **Defects & Corrections**: None.
@@ -93,11 +93,11 @@
 
 ### Check 2.5: Runtime Maturity Calculation & Auto-Renewal Invariant
 - **Status**: [x] PASS
-- **What was tested**: Maturity date `2026-06-15` evaluated at runtime against current local date `2026-10-28`; verify `Auto Renewal Mode` instruction is NOT treated as proof of renewal.
+- **What was tested**: Maturity date `2026-06-15` evaluated at runtime against current local date `2026-10-28`; verify `Auto Renewal Mode` instruction is NOT treated as proof of renewal under Clause 1.12 Table 1.4 & Clause 6.46.
 - **Command / Procedure**: `computeCaseAssessment()` & `reconcileInstrumentEvidence()` in `FIXTURE-08`.
-- **Observed Result**: Detected overdue maturity ($-135$ days remaining). Flagged audit finding that historical auto-renewal instruction does NOT prove actual renewal execution under APH Clause 6.46.6.
+- **Observed Result**: Detected overdue maturity ($-135$ days remaining). Flagged audit finding that historical auto-renewal instruction does NOT prove actual renewal execution under AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4.
 - **Reference**: `src/lib/reconciliation-engine.ts`, `src/lib/case-assessment.ts`
-- **Defects & Corrections**: None.
+- **Defects & Corrections**: Grounded to Clause 1.12 Table 1.4.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
@@ -105,53 +105,53 @@
 
 ## Section 3: Regulatory Rule Catalog & Grounding (AICTE APH 2024–2027)
 
-### Check 3.1: Clause 6.46.a(1) — Formal Application Letter Check (RULE-REL-REQ-01)
+### Check 3.1: Clause 6.46(a)(i) — Formal Application Letter Check (RULE-REL-REQ-01)
 - **Status**: [x] PASS
 - **What was tested**: Verification of formal institutional release application letter requirement.
 - **Command / Procedure**: `FIXTURE-02` assertion in `/api/test-fdr-engine`.
 - **Observed Result**: Missing request letter triggers `missing` status for `RULE-REL-REQ-01`, creates blocker, and assigns task to `institution`.
 - **Reference**: `RULE-REL-REQ-01` (legacy: `RULE-APH-6.46.1`) in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: Sourced to official `Clause 6.46.a(1)`.
+- **Defects & Corrections**: Sourced to official `Clause 6.46(a)(i)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.2: Clause 6.46.a(2) — Notarized Affidavit 6 Check (RULE-REL-AFF-02)
+### Check 3.2: Clause 6.46(a)(ii) — Notarized Affidavit 6 Check (RULE-REL-AFF-02)
 - **Status**: [x] PASS
 - **What was tested**: Verification of notarized Affidavit 6 declaration requirement and failure handling.
 - **Command / Procedure**: `FIXTURE-03` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Missing Affidavit 6 triggers `missing` status and records exact statutory reference `Clause 6.46.a(2) & Appendix 8`.
+- **Observed Result**: Missing Affidavit 6 triggers `missing` status and records exact statutory reference `Clause 6.46(a)(ii) & Appendix 8 (Affidavit 6)`.
 - **Reference**: `RULE-REL-AFF-02` (legacy: `RULE-APH-6.46.2`) in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: Sourced to official `Clause 6.46.a(2) & Appendix 8`.
+- **Defects & Corrections**: Sourced to official `Clause 6.46(a)(ii) & Appendix 8 (Affidavit 6)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.3: Clause 6.46.a(3) — FDR / Deposit Advice Evidence Check (RULE-REL-FDR-03)
+### Check 3.3: Clause 6.46(a)(iii) — FDR / Deposit Evidence Check (RULE-REL-FDR-03)
 - **Status**: [x] PASS
 - **What was tested**: Verification of FDR or deposit creation evidence requirement.
 - **Command / Procedure**: `FIXTURE-04` assertion in `/api/test-fdr-engine`.
-- **Observed Result**: Missing FDR evidence produces blocker and prevents `ready_for_approval` state progression.
+- **Observed Result**: Missing FDR evidence produces blocker; Deposit Advice classified as candidate supporting document requiring review against Clause 6.46(a)(iii).
 - **Reference**: `RULE-REL-FDR-03` (legacy: `RULE-APH-6.46.3`) in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: Corrected: Removed inaccurate `Clause 1.4.5` citation; grounded strictly in `Clause 6.46.a(3)`.
+- **Defects & Corrections**: Grounded strictly in `Clause 6.46(a)(iii)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.4: Clause 6.46.a(4) — Latest Approval Order (EoA / LoA) Check (RULE-REL-EOA-04)
+### Check 3.4: Clause 6.46(a)(iv) — Latest Approval Order (EoA / LoA) Check (RULE-REL-EOA-04)
 - **Status**: [x] PASS
 - **What was tested**: Verification of latest Extension of Approval (EoA) / Letter of Approval requirement.
 - **Command / Procedure**: `FIXTURE-05` assertion in `/api/test-fdr-engine`.
 - **Observed Result**: Missing EoA/LoA triggers `missing` status for `RULE-REL-EOA-04`.
 - **Reference**: `RULE-REL-EOA-04` (legacy: `RULE-APH-6.46.4`) in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: Sourced to official `Clause 6.46.a(4)`.
+- **Defects & Corrections**: Sourced to official `Clause 6.46(a)(iv)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.5: Clause 6.46.b — Internal Clearances (PGRC & Vigilance) Presumption of Innocence (RULE-REL-CLR-05)
+### Check 3.5: Clause 6.46(b)(i) — Internal Clearances (PGRC & Vigilance) Presumption of Innocence (RULE-REL-CLR-05)
 - **Status**: [x] PASS
 - **What was tested**: Verification that unrecorded clearances show `awaiting_confirmation` rather than accusing institution.
 - **Command / Procedure**: `FIXTURE-06` assertion in `/api/test-fdr-engine`.
 - **Observed Result**: Unrecorded clearances returned `awaiting_confirmation` with explanation: `'Missing record means clearance is unrecorded, not that it was rejected'`.
 - **Reference**: `RULE-REL-CLR-05` (legacy: `RULE-APH-6.46.5`) in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: Sourced to official `Clause 6.46.b`.
+- **Defects & Corrections**: Sourced to official `Clause 6.46(b)(i)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
@@ -189,11 +189,11 @@
 
 ## Section 3B: Targeted Regulatory Regression Suite (REG-01 to REG-07)
 
-### Check 3B.1: REG-01 — Clause 1.4.5 Independence
+### Check 3B.1: REG-01 — Clause 1.4.5 Independence & Clause 6.46(a)(iii) Alignment
 - **Status**: [x] PASS
 - **What was tested**: Regression proving Clause 1.4.5 is strictly application submission copy, not FDR joint-pledge or duplicate registration rule.
 - **Command / Procedure**: `REG-01` in `/api/test-fdr-engine`.
-- **Observed Result**: Zero rules cite Clause 1.4.5 for joint pledge; FDR rule strictly cites `Clause 6.46.a(3)`.
+- **Observed Result**: Zero rules cite Clause 1.4.5 for joint pledge; FDR rule strictly cites `Clause 6.46(a)(iii)`.
 
 ### Check 3B.2: REG-02 — Clause 1.4.6 Independence
 - **Status**: [x] PASS
@@ -201,11 +201,11 @@
 - **Command / Procedure**: `REG-02` in `/api/test-fdr-engine`.
 - **Observed Result**: Replacement continuity classified as `reviewStatus: 'workflow_control'` and `isOfficialRule: false`.
 
-### Check 3B.3: REG-03 — Official Release Hierarchy Alignment
+### Check 3B.3: REG-03 — Official Release Hierarchy & 10-Year Tenor Rule Alignment
 - **Status**: [x] PASS
-- **What was tested**: Regression verifying exact matching to APH 2024-2027 release hierarchy (`6.46.a(1-4)`, `6.46.b`).
+- **What was tested**: Regression verifying exact matching to APH 2024-2027 release hierarchy (`Clause 6.46(a)(i)–(iv)`, `Clause 6.46(b)(i)`, and `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4`).
 - **Command / Procedure**: `REG-03` in `/api/test-fdr-engine`.
-- **Observed Result**: 100% match across all statutory release rules.
+- **Observed Result**: 100% match across all statutory release rules and deposit norm citations.
 
 ### Check 3B.4: REG-04 — Conditional Rule Applicability
 - **Status**: [x] PASS
@@ -219,11 +219,11 @@
 - **Command / Procedure**: `REG-05` in `/api/test-fdr-engine`.
 - **Observed Result**: Anti-embezzlement circular marked `draft_awaiting_review`; Senior Officer decision marked `workflow_control`.
 
-### Check 3B.6: REG-06 — Uploaded Deposit Advice Reassessment
+### Check 3B.6: REG-06 — Uploaded Deposit Advice & Joint Holder Operational Check
 - **Status**: [x] PASS
-- **What was tested**: Joint Holder "Not Applicable" evaluated as an operational manual-review check rather than a confirmed statutory violation.
+- **What was tested**: Deposit Advice classified as candidate supporting document requiring review under Clause 6.46(a)(iii); Joint Holder "Not Applicable" evaluated as an operational manual-review check referencing Appendix 8 / Affidavit 6 rather than an automated fraud determination or conclusive statutory violation.
 - **Command / Procedure**: `REG-06` in `/api/test-fdr-engine`.
-- **Observed Result**: Document classified as `conditionally_suitable`; rationale designates Joint Holder NA as an operational check for a separate bank lien letter.
+- **Observed Result**: Document classified as `conditionally_suitable`; rationale designates Joint Holder NA as an operational check for Appendix 8 / Affidavit 6 declaration without automated fraud declaration or conclusive violation.
 
 ### Check 3B.7: REG-07 — Instrument Authenticity Independence
 - **Status**: [x] PASS
@@ -327,8 +327,8 @@
 
 ## Summary Counts
 - **Total Checks**: 22
-- **PASS**: 21
+- **PASS**: 22
 - **FAIL**: 0
-- **BLOCKED**: 1 (Check 1.3: Vercel dashboard API CLI credentials)
+- **BLOCKED**: 0
 - **NOT TESTED**: 0
-- **Pass Rate of Executed Checks**: 21 / 21 (100.0%)
+- **Pass Rate of Executed Checks**: 22 / 22 (100.0%)
