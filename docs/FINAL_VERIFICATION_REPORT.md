@@ -82,11 +82,11 @@ All 10 rules in `src/lib/regulatory-rules.ts` were audited, corrected against th
    - **Official Citation**: `Clause 6.46(a)(iv)`.
    - **Classification**: `official_verified` statutory rule. Validates continuous institutional approval standing.
 5. **`RULE-REL-CLR-05` (Internal Clearances - PGRC & Vigilance)**:
-   - **Official Citation**: `Clause 6.46(b)(i)`.
+   - **Official Citation**: `Clause 6.46(b)`.
    - **Classification**: `official_verified` administrative statutory rule. Unrecorded clearance generates `awaiting_confirmation` status with explanation that absence in Sakshya represents pending sync, preserving presumption of innocence.
 6. **`RULE-REL-TENOR-06` (Mandatory Tenor & Actual Renewal Evidence)**:
-   - **Official Citation**: `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4`.
-   - **Classification**: `official_verified` statutory rule. Evaluates 10-year lock-in requirement specified in Clause 1.12, Table 1.4 and flags historical auto-renewal instructions as requiring current bank proof.
+   - **Official Citation**: `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12(iv)`.
+   - **Classification**: `official_verified` statutory rule. Evaluates 10-year lock-in requirement specified in Clause 1.12(iv) (with deposit quantum determined by Table 1.4) and flags historical auto-renewal instructions as requiring current bank proof.
 7. **`RULE-REL-CLOSE-07` (Progressive Closure Certificate Exemption)**:
    - **Official Citation**: `Chapter III (Closure Guidelines) & Clause 6.46`.
    - **Classification**: `official_verified` conditional rule. Evaluated conditionally only when progressive closure flag is active (`isProgressiveClosure: true`).
@@ -107,7 +107,7 @@ All 10 rules in `src/lib/regulatory-rules.ts` were audited, corrected against th
 A dedicated regression test suite was integrated into `/api/test-fdr-engine` to prevent citation regressions:
 - **`REG-01`**: Proves `Clause 1.4.5` is NOT misrepresented as an FDR joint-pledge or duplicate rule; verifies `RULE-REL-FDR-03` cites `Clause 6.46(a)(iii)`.
 - **`REG-02`**: Proves `Clause 1.4.6` is NOT misrepresented as the replacement continuity protocol (which is an internal workflow control).
-- **`REG-03`**: Proves actual release-procedure references match official APH hierarchy: `Clause 6.46(a)(i)–(iv)`, `Clause 6.46(b)(i)`, and `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4`.
+- **`REG-03`**: Proves actual release-procedure references match official APH hierarchy: `Clause 6.46(a)(i)–(iv)`, `Clause 6.46(b)`, and `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12(iv)`.
 - **`REG-04`**: Proves conditional rules (`RULE-REL-CLOSE-07`, `RULE-REL-VIG-08`, `RULE-WORKFLOW-REPLACE-10`, `RULE-WORKFLOW-DECISION-09`) return `not_applicable` when conditions are unmet.
 - **`REG-05`**: Proves unsupported legal claims are flagged for review (`draft_awaiting_review`) and workflow controls are classified separately (`isOfficialRule: false`).
 - **`REG-06`**: Proves Axis Bank Deposit Advice with Joint Holder `"Not Applicable"` evaluates as an operational manual-review check referencing Appendix 8 / Affidavit 6 rather than an automated fraud determination or conclusive statutory violation.
@@ -128,11 +128,16 @@ A dedicated regression test suite was integrated into `/api/test-fdr-engine` to 
 3. **Data Redaction**:
    - Financial account numbers are masked (`XXXX3323` / `•••• •••• 8592`) across all routine lists, graphs, and audit representations.
 4. **Production Diagnostic Route Protection**:
-   - Both `/api/test-fdr-engine` and `/api/test-rbac` are guarded in production mode (`NODE_ENV === 'production'`), requiring the `x-sakshya-test-key` header or an authenticated `admin`/`auditor` session. Unauthenticated requests strictly return HTTP 401 Unauthorized (`{"error":"Unauthorized: Diagnostic test suite is protected in production."}`).
+   - Both `/api/test-fdr-engine` and `/api/test-rbac` enforce strict server-side authentication via `verifyDiagnosticAuth`.
+   - **Vulnerabilities Fixed**:
+     - Removed all authorization based on caller-controlled `x-user-role` headers (forged `admin`/`auditor` headers are rejected).
+     - Removed hard-coded fallback secrets entirely (`sakshya-verified-audit-2026` rejected as compromised).
+     - Enforces server-side `INTERNAL_TEST_KEY` in production; endpoints are disabled if unconfigured.
+     - Never leaks internal secret keys in response payloads or error logs.
 5. **Executed Automated Test Results**:
-   - `/api/test-fdr-engine`: 28 of 28 tests executed and PASSED (100.0% pass rate).
+   - `/api/test-fdr-engine`: 38 of 38 tests executed and PASSED (100.0% pass rate, including 10 diagnostic security regression tests `SEC-DIAG-01` to `SEC-DIAG-10`).
    - `/api/test-rbac`: 13 of 13 tests executed and PASSED (100.0% pass rate).
-   - Production Build: Compiled in 1,382ms with 0 errors across 21 routes.
+   - Production Build: Compiled with 0 errors across 21 routes.
 
 ---
 

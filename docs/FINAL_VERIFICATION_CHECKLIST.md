@@ -145,13 +145,13 @@
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
-### Check 3.5: Clause 6.46(b)(i) — Internal Clearances (PGRC & Vigilance) Presumption of Innocence (RULE-REL-CLR-05)
+### Check 3.5: Clause 6.46(b) — Internal Clearances (PGRC & Vigilance) Presumption of Innocence (RULE-REL-CLR-05)
 - **Status**: [x] PASS
 - **What was tested**: Verification that unrecorded clearances show `awaiting_confirmation` rather than accusing institution.
 - **Command / Procedure**: `FIXTURE-06` assertion in `/api/test-fdr-engine`.
 - **Observed Result**: Unrecorded clearances returned `awaiting_confirmation` with explanation: `'Missing record means clearance is unrecorded, not that it was rejected'`.
 - **Reference**: `RULE-REL-CLR-05` (legacy: `RULE-APH-6.46.5`) in `src/lib/regulatory-rules.ts`
-- **Defects & Corrections**: Sourced to official `Clause 6.46(b)(i)`.
+- **Defects & Corrections**: Sourced to official `Clause 6.46(b)`.
 - **Retest Result**: Passed.
 - **Limitations**: None.
 
@@ -203,7 +203,7 @@
 
 ### Check 3B.3: REG-03 — Official Release Hierarchy & 10-Year Tenor Rule Alignment
 - **Status**: [x] PASS
-- **What was tested**: Regression verifying exact matching to APH 2024-2027 release hierarchy (`Clause 6.46(a)(i)–(iv)`, `Clause 6.46(b)(i)`, and `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4`).
+- **What was tested**: Regression verifying exact matching to APH 2024-2027 release hierarchy (`Clause 6.46(a)(i)–(iv)`, `Clause 6.46(b)`, and `AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12(iv)` with Table 1.4 for deposit amounts).
 - **Command / Procedure**: `REG-03` in `/api/test-fdr-engine`.
 - **Observed Result**: 100% match across all statutory release rules and deposit norm citations.
 
@@ -303,15 +303,20 @@
 
 ## Section 6: API Route Protection & Production Safety
 
-### Check 6.1: Test API Route Production Exposure
+### Check 6.1: Diagnostic Endpoint Security Overhaul & Production Guard
 - **Status**: [x] PASS
-- **What was tested**: Protect `/api/test-fdr-engine` and `/api/test-rbac` from unauthorized public crawling in production.
-- **Command / Procedure**: Added `x-sakshya-test-key` / `authorization` header guard returning 401 when unauthenticated in production.
-- **Observed Result**: Protected both test endpoints; authorized requests succeed with valid test key header.
-- **Reference**: `src/app/api/test-fdr-engine/route.ts`, `src/app/api/test-rbac/route.ts`
-- **Defects & Corrections**: Implemented production security guard in both test routes.
-- **Retest Result**: Verified on production build.
-- **Limitations**: None.
+- **What was tested**: Protection of `/api/test-fdr-engine` and `/api/test-rbac` from unauthorized caller-controlled header spoofing and secret fallback vulnerabilities.
+- **Command / Procedure**:
+  - Removed all authorization based on caller-controlled `x-user-role` headers (`admin`/`auditor`).
+  - Removed hard-coded fallback secret (`sakshya-verified-audit-2026`) entirely.
+  - Enforced server-side `INTERNAL_TEST_KEY` via `src/lib/diagnostic-auth.ts`.
+  - In production (`NODE_ENV === 'production'`), requests missing or mismatched with `INTERNAL_TEST_KEY` are rejected (401). If `INTERNAL_TEST_KEY` is not set on the server in production, endpoints are disabled by default.
+  - Added 10 security regression tests (`SEC-DIAG-01` to `SEC-DIAG-10`) in `/api/test-fdr-engine` proving forged role headers, missing keys, compromised old keys, and incorrect keys are rejected while configured keys work.
+- **Observed Result**: All 10 security regression tests pass. Forged headers and compromised fallback rejected. Local dev testing preserved. Zero secret leakage in logs or responses.
+- **Reference**: `src/lib/diagnostic-auth.ts`, `src/app/api/test-fdr-engine/route.ts`, `src/app/api/test-rbac/route.ts`
+- **Defects & Corrections**: Both vulnerabilities eliminated; modular `verifyDiagnosticAuth` helper enforces server-side key validation.
+- **Retest Result**: Verified on production build and test suites.
+- **Limitations**: In production deployment, server-side `INTERNAL_TEST_KEY` environment variable must be configured in Vercel project settings to enable endpoint access.
 
 ### Check 6.2: Sensitive Identifier Masking
 - **Status**: [x] PASS

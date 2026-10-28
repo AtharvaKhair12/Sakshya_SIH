@@ -121,7 +121,7 @@ Every action is enforced at both the UI layer, service layer, and PostgreSQL Row
 Sakshya strictly complies with authentic public sources:
 1. **AICTE Regulatory Reference Rules:**
    - Source: [AICTE Approval Process Handbook (APH 2024-2027)](https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf)
-   - Sourced Clauses: Clause 1.4.1 (Joint Account Mandate), Clause 1.4.2 (10-Year Tenure), Clause 1.4.3 (Scheduled Commercial Bank), Appendix 8 (Release Clearance).
+   - Sourced Clauses: Clause 1.4.1 (Joint Account Mandate), Clause 1.12(iv) (10-Year Retention), Table 1.4 (Deposit Amounts), Clause 1.4.3 (Scheduled Commercial Bank), Clause 6.46(b) (Internal Clearances), Appendix 8 (Release Clearance).
 2. **Institutional Identity Data:**
    - Source: [Ministry of Education AISHE Institutional Directory](https://dashboard.aishe.gov.in/hedirectory/)
    - Genuine AISHE codes (e.g. `C-33827` for VJTI, `U-1199` for COEP Tech, `U-0099` for DTU).

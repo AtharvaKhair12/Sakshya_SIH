@@ -1,7 +1,7 @@
 // ============================================================================
 // SAKSHYA PS 1 — FDR EVIDENCE-TO-ACTION ENGINE AUTOMATED TEST SUITE
 // Rigorous verification of:
-// 1. 11 Source-Grounded Regulatory Rule Fixtures (AICTE APH 2024–2027 Clause 6.46(a)(i)–(iv), Clause 6.46(b)(i), Clause 1.12 Table 1.4)
+// 1. 11 Source-Grounded Regulatory Rule Fixtures (AICTE APH 2024–2027 Clause 6.46(a)(i)–(iv), Clause 6.46(b), Clause 1.12(iv))
 // 2. Real Document Intelligence (Classification, Field Extraction, Provenance, Masking)
 // 3. Assessment A (Document Suitability) vs Assessment B (Instrument Authenticity)
 // 4. Runtime Maturity & Renewal Intelligence (Auto-renewal non-proof invariant)
@@ -48,25 +48,14 @@ import {
 import { buildFDRContinuityGraph } from '@/lib/continuity-graph';
 import { computeCaseAssessment } from '@/lib/case-assessment';
 import { canPerformAction, canAccessInstrument } from '@/lib/permissions';
+import { verifyDiagnosticAuth } from '@/lib/diagnostic-auth';
 
 export async function GET(req: Request) {
-  // Production Endpoint Protection:
-  // In production, require test secret header or auditor/admin authorization
-  const isProd = process.env.NODE_ENV === 'production';
-  const testKeyHeader = req.headers.get('x-sakshya-test-key');
-  const validKey = process.env.INTERNAL_TEST_KEY || 'sakshya-verified-audit-2026';
-
-  if (isProd && testKeyHeader !== validKey && req.headers.get('authorization') !== `Bearer ${validKey}`) {
-    const roleHeader = req.headers.get('x-user-role');
-    if (roleHeader !== 'admin' && roleHeader !== 'auditor') {
-      return NextResponse.json(
-        {
-          error: 'Unauthorized: Diagnostic test suite is protected in production.',
-          hint: 'Provide x-sakshya-test-key header or authenticate as auditor/admin.',
-        },
-        { status: 401 }
-      );
-    }
+  // Strict Server-Side Endpoint Protection:
+  // Requires server-side INTERNAL_TEST_KEY. Rejects caller-controlled role headers and hardcoded fallbacks.
+  const auth = verifyDiagnosticAuth(req.headers);
+  if (!auth.authorized && auth.response) {
+    return auth.response;
   }
   const testResults: {
     category: string;
@@ -233,13 +222,13 @@ export async function GET(req: Request) {
     if (req2?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(ii) not satisfied: got ${req2?.status}`);
     if (req3?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(iii) not satisfied: got ${req3?.status}`);
     if (req4?.status !== 'satisfied') throw new Error(`Rule 6.46(a)(iv) not satisfied: got ${req4?.status}`);
-    if (req5?.status !== 'satisfied') throw new Error(`Rule 6.46(b)(i) not satisfied: got ${req5?.status}`);
+    if (req5?.status !== 'satisfied') throw new Error(`Rule 6.46(b) not satisfied: got ${req5?.status}`);
 
     if (req1.clauseRef !== 'Clause 6.46(a)(i)') throw new Error(`Expected Clause 6.46(a)(i), got ${req1.clauseRef}`);
     if (!req2.clauseRef.includes('6.46(a)(ii)')) throw new Error(`Expected Clause 6.46(a)(ii), got ${req2.clauseRef}`);
     if (req3.clauseRef !== 'Clause 6.46(a)(iii)') throw new Error(`Expected Clause 6.46(a)(iii), got ${req3.clauseRef}`);
     if (req4.clauseRef !== 'Clause 6.46(a)(iv)') throw new Error(`Expected Clause 6.46(a)(iv), got ${req4.clauseRef}`);
-    if (req5.clauseRef !== 'Clause 6.46(b)(i)') throw new Error(`Expected Clause 6.46(b)(i), got ${req5.clauseRef}`);
+    if (req5.clauseRef !== 'Clause 6.46(b)') throw new Error(`Expected Clause 6.46(b), got ${req5.clauseRef}`);
   });
 
   // Fixture 2: Missing Request Letter
@@ -525,14 +514,14 @@ export async function GET(req: Request) {
   });
 
   // REG-03: Actual release-procedure references match official handbook hierarchy
-  recordTest('Regulatory Regression', 'REG-03', 'Release procedure references match official APH 2024-2027 hierarchy (Clause 6.46(a)(i)-(iv), Clause 6.46(b)(i), Clause 1.12 Table 1.4)', () => {
+  recordTest('Regulatory Regression', 'REG-03', 'Release procedure references match official APH 2024-2027 hierarchy (Clause 6.46(a)(i)-(iv), Clause 6.46(b), Clause 1.12(iv))', () => {
     const expectedHierarchy: Record<string, string> = {
       'RULE-REL-REQ-01': 'Clause 6.46(a)(i)',
       'RULE-REL-AFF-02': 'Clause 6.46(a)(ii) & Appendix 8 (Affidavit 6)',
       'RULE-REL-FDR-03': 'Clause 6.46(a)(iii)',
       'RULE-REL-EOA-04': 'Clause 6.46(a)(iv)',
-      'RULE-REL-CLR-05': 'Clause 6.46(b)(i)',
-      'RULE-REL-TENOR-06': 'AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4',
+      'RULE-REL-CLR-05': 'Clause 6.46(b)',
+      'RULE-REL-TENOR-06': 'AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12(iv)',
       'RULE-REL-CLOSE-07': 'Chapter III (Closure Guidelines) & Clause 6.46',
     };
 
@@ -900,6 +889,113 @@ export async function GET(req: Request) {
     }
     if (canPerformAction(instSession, 'verify_source')) {
       throw new Error('Institution permitted to verify source');
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // PART 7: DIAGNOSTIC ENDPOINT SECURITY REGRESSION SUITE
+  // Strict proof that:
+  // - Forged role headers (x-user-role: admin / auditor) are strictly rejected
+  // - Missing client keys when key configured in production return 401
+  // - Missing server-side INTERNAL_TEST_KEY in production disables the endpoint (401)
+  // - Incorrect client keys are strictly rejected (401)
+  // - Compromised old hardcoded secret ('sakshya-verified-audit-2026') is rejected
+  // - Configured key via x-sakshya-test-key is authorized
+  // - Configured key via Authorization: Bearer is authorized
+  // - Local development preserves testing access
+  // - Rejection responses never expose replacement keys
+  // --------------------------------------------------------------------------
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-01', 'Forged x-user-role: admin header is strictly rejected in production', () => {
+    const mockHeaders = new Headers({ 'x-user-role': 'admin' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secure-test-key-999' });
+    if (auth.authorized) {
+      throw new Error('VULNERABILITY DETECTED: Forged x-user-role: admin was granted access without valid test key');
+    }
+    if (auth.status !== 401) {
+      throw new Error(`Expected status 401, got ${auth.status}`);
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-02', 'Forged x-user-role: auditor header is strictly rejected in production', () => {
+    const mockHeaders = new Headers({ 'x-user-role': 'auditor' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secure-test-key-999' });
+    if (auth.authorized) {
+      throw new Error('VULNERABILITY DETECTED: Forged x-user-role: auditor was granted access without valid test key');
+    }
+    if (auth.status !== 401) {
+      throw new Error(`Expected status 401, got ${auth.status}`);
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-03', 'Missing client test key in production is strictly rejected', () => {
+    const mockHeaders = new Headers();
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secure-test-key-999' });
+    if (auth.authorized) {
+      throw new Error('Request without key was unexpectedly authorized in production');
+    }
+    if (auth.status !== 401) {
+      throw new Error(`Expected status 401, got ${auth.status}`);
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-04', 'Missing server-side INTERNAL_TEST_KEY disables endpoint in production', () => {
+    const mockHeaders = new Headers({ 'x-sakshya-test-key': 'some-client-key' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: undefined });
+    if (auth.authorized) {
+      throw new Error('Endpoint permitted access when server-side INTERNAL_TEST_KEY was unconfigured');
+    }
+    if (auth.status !== 401) {
+      throw new Error(`Expected status 401, got ${auth.status}`);
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-05', 'Compromised legacy secret is strictly rejected in production', () => {
+    const mockHeaders = new Headers({ 'x-sakshya-test-key': 'sakshya-verified-audit-2026' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secret-alpha-99' });
+    if (auth.authorized) {
+      throw new Error('Compromised legacy secret sakshya-verified-audit-2026 was accepted');
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-06', 'Incorrect key is strictly rejected in production', () => {
+    const mockHeaders = new Headers({ 'x-sakshya-test-key': 'wrong-key-1234' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secret-alpha-99' });
+    if (auth.authorized) {
+      throw new Error('Incorrect key was unexpectedly authorized');
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-07', 'Configured key via x-sakshya-test-key is authorized', () => {
+    const mockHeaders = new Headers({ 'x-sakshya-test-key': 'prod-secret-alpha-99' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secret-alpha-99' });
+    if (!auth.authorized) {
+      throw new Error('Valid x-sakshya-test-key was unexpectedly rejected');
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-08', 'Configured key via Authorization Bearer token is authorized', () => {
+    const mockHeaders = new Headers({ 'authorization': 'Bearer prod-secret-alpha-99' });
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: 'prod-secret-alpha-99' });
+    if (!auth.authorized) {
+      throw new Error('Valid Bearer token was unexpectedly rejected');
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-09', 'Local development preserves testing access without unnecessary friction', () => {
+    const mockHeaders = new Headers();
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'development', internalTestKey: undefined });
+    if (!auth.authorized) {
+      throw new Error('Local development access was blocked when no key configured');
+    }
+  });
+
+  recordTest('Diagnostic Endpoint Security', 'SEC-DIAG-10', 'Rejection responses never leak secret keys in payload or hint', () => {
+    const mockHeaders = new Headers({ 'x-sakshya-test-key': 'attempt' });
+    const secretKey = 'super-secret-high-entropy-token-xyz';
+    const auth = verifyDiagnosticAuth(mockHeaders, { nodeEnv: 'production', internalTestKey: secretKey });
+    const responseBody = JSON.stringify(auth.response);
+    if (responseBody.includes(secretKey)) {
+      throw new Error('SECURITY LEAK: Response body contained the configured internal key');
     }
   });
 

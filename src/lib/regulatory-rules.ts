@@ -1,8 +1,8 @@
 // ============================================================================
 // Sakshya PS 1 — Source-Grounded Regulatory Rule Engine
 // Authoritative rules grounded in AICTE Approval Process Handbook (APH 2024–2027)
-// Specifically Clause 6.46(a)(i)–(iv), Clause 6.46(b)(i),
-// Chapter I, Clause 1.12 — Security Deposit (Table 1.4 - Deposit Norms),
+// Specifically Clause 6.46(a)(i)–(iv), Clause 6.46(b),
+// Chapter I, Clause 1.12(iv) (10-Year Security Deposit Retention; Table 1.4 Deposit Amounts),
 // and Chapter III (Closure Norms).
 // Note: Internal workflow controls and administrative guidelines are explicitly
 // distinguished from statutory handbook clauses.
@@ -302,7 +302,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 5. Internal Cell Clearances (PGRC, Vigilance, Regional Office) — Clause 6.46(b)(i)
+  // 5. Internal Cell Clearances (PGRC, Vigilance, Regional Office) — Clause 6.46(b)
   {
     id: 'RULE-REL-CLR-05',
     legacyId: 'RULE-APH-6.46.5',
@@ -312,8 +312,8 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     sourceDocument: 'AICTE Approval Process Handbook (APH 2024–2027)',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'Clause 6.46(b)(i)',
-    pageReference: 'Chapter VI, Clause 6.46(b)(i)',
+    clauseReference: 'Clause 6.46(b)',
+    pageReference: 'Chapter VI, Clause 6.46(b)',
     description: 'Clearances must be confirmed from Public Grievance Redressal Cell (PGRC), Vigilance Bureau, Legal Bureau, and Regional Office confirming zero pending student/faculty liabilities, inquiries, or judicial injunctions.',
     applicabilityCondition: 'Mandatory administrative clearance prior to Senior Officer approval.',
     requiredEvidence: 'Internal clearance record logged by authorized scrutiny or cell officer.',
@@ -337,7 +337,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-CLR-05',
           legacyRuleId: 'RULE-APH-6.46.5',
-          clauseRef: 'Clause 6.46(b)(i)',
+          clauseRef: 'Clause 6.46(b)',
           title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
           status: 'satisfied',
           explanation: 'Bureau and cell clearances (PGRC, Vigilance, Regional Office) recorded and verified.',
@@ -351,7 +351,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-CLR-05',
         legacyRuleId: 'RULE-APH-6.46.5',
-        clauseRef: 'Clause 6.46(b)(i)',
+        clauseRef: 'Clause 6.46(b)',
         title: 'Institutional Clearances from PGRC, Vigilance & Regional Office',
         status: 'awaiting_confirmation',
         explanation: 'Clearance record from PGRC / Vigilance Cell is not recorded in the available system data. (Note: Missing record means clearance is unrecorded, not that it was rejected).',
@@ -362,7 +362,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     },
   },
 
-  // 6. Mandatory 10-Year Security Deposit Retention & Renewal Verification — Clause 1.12, Table 1.4
+  // 6. Mandatory 10-Year Security Deposit Retention & Renewal Verification — Clause 1.12(iv)
   {
     id: 'RULE-REL-TENOR-06',
     legacyId: 'RULE-APH-6.46.6',
@@ -372,9 +372,9 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
     sourceDocument: 'AICTE Approval Process Handbook 2024–2027',
     officialSourceUrl: 'https://www.aicte.gov.in/sites/default/files/APH%20Final.pdf',
     handbookVersion: '2024–2027',
-    clauseReference: 'AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12 — Security Deposit, Table 1.4',
-    pageReference: 'Chapter I, Clause 1.12, Table 1.4 & Chapter VI, Clause 6.46',
-    description: 'Security Deposit must be maintained for the mandatory statutory tenor of 10 years (or applicable term specified in Clause 1.12, Table 1.4) and returned on completion of the term subject to Clause 6.46 conditions. If maturity date has passed, an auto-renewal clause in an old deposit advice is NOT proof of actual renewal; updated renewal receipt or current bank statement is mandatory.',
+    clauseReference: 'AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12(iv)',
+    pageReference: 'Chapter I, Clause 1.12(iv) (Deposit Norms Table 1.4) & Chapter VI, Clause 6.46',
+    description: 'Security Deposit must be maintained for the mandatory statutory tenor of 10 years pursuant to AICTE Approval Process Handbook 2024–2027, Chapter I, Clause 1.12(iv) (with deposit quantum specified in Table 1.4) and returned on completion of the term subject to Clause 6.46 conditions. If maturity date has passed, an auto-renewal clause in an old deposit advice is NOT proof of actual renewal; updated renewal receipt or current bank statement is mandatory.',
     applicabilityCondition: 'Applicable to all maturing or release-seeking instruments.',
     requiredEvidence: 'Instrument maturity date & renewal proof where maturity date is in the past.',
     severity: 'critical',
@@ -391,7 +391,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-TENOR-06',
           legacyRuleId: 'RULE-APH-6.46.6',
-          clauseRef: 'Clause 1.12 (Table 1.4) & Clause 6.46',
+          clauseRef: 'Clause 1.12(iv) & Clause 6.46',
           title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
           status: 'satisfied',
           explanation: `Instrument is within active tenor (Maturity Date: ${ctx.instrument.maturityDate}). No overdue maturity condition exists.`,
@@ -413,7 +413,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
         return {
           ruleId: 'RULE-REL-TENOR-06',
           legacyRuleId: 'RULE-APH-6.46.6',
-          clauseRef: 'Clause 1.12 (Table 1.4) & Clause 6.46',
+          clauseRef: 'Clause 1.12(iv) & Clause 6.46',
           title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
           status: 'satisfied',
           explanation: 'Maturity date passed, but valid renewal / replacement evidence is recorded and under monitoring.',
@@ -427,7 +427,7 @@ export const AICTE_REGULATORY_RULES: GroundedRegulatoryRule[] = [
       return {
         ruleId: 'RULE-REL-TENOR-06',
         legacyRuleId: 'RULE-APH-6.46.6',
-        clauseRef: 'Clause 1.12 (Table 1.4) & Clause 6.46',
+        clauseRef: 'Clause 1.12(iv) & Clause 6.46',
         title: 'Mandatory 10-Year Security Deposit Retention & Renewal Verification',
         status: 'stale',
         explanation: `Maturity date (${ctx.instrument.maturityDate}) has passed. Notice: Auto-renewal instructions in historical documents do NOT establish that renewal occurred. Updated bank renewal confirmation is required.`,
