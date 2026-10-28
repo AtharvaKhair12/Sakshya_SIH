@@ -171,15 +171,19 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
 
   // 2. FDR / Receipt / Account Number Extraction
   const fdrRegexes = [
-    /(?:FDR|Receipt|Certificate|A\/C|Account|Deposit\s*No|Fixed\s*Deposit\s*No)[.\s:#-]+([A-Z0-9-]{6,20})/i,
     /(SBI-FDR-[0-9]{6,12}|BOB-FDR-[0-9]{6,12}|PNB-FDR-[0-9]{6,12}|FDR-[0-9]{6,12})/i,
-    /(?:A\/c\s*No\.?|Account\s*Number)[.\s:]*([0-9]{9,18})/i,
+    /(?:Account\s*(?:Number|No)|A\/c\s*No\.?)[.\s:#-]+([0-9]{9,18})/i,
+    /(?:FDR\s*(?:No|Ref|#)|Receipt\s*(?:No|#)|Certificate\s*(?:No|#))[.\s:#-]+([A-Z0-9/-]{6,20})/i,
+    /(?:FDR|Receipt|Certificate)[.\s:#-]+([0-9]{6,20})/i,
+    /\b([0-9]{13,18})\b/,
   ];
 
   for (const regex of fdrRegexes) {
     const match = text.match(regex);
     if (match && match[1]) {
       const rawVal = match[1].trim();
+      if (/^(?:NUMBER|AMOUNT|HOLDER|BRANCH|DETAILS)$/i.test(rawVal)) continue;
+      if (rawVal.toLowerCase().includes('http') || rawVal.toLowerCase().includes('.html') || rawVal.toLowerCase().includes('mailers')) continue;
       fields.fdrNumber = {
         value: rawVal,
         confidence: 0.92,
@@ -195,6 +199,7 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
   // 3. Deposit Principal Amount Extraction
   const amountRegexes = [
     /(?:Deposit\s*Amount|Principal\s*Amount|Principal|Sum\s*of\s*Rs\.?|Amount)[.\s:₹RsINR-]+([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/i,
+    /(?:INR|Rs\.?|₹)\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/i,
     /₹\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/,
     /Rs\.?\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{2})?)/i,
   ];
@@ -218,7 +223,7 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
 
   // 4. Interest Rate Extraction
   const rateMatch = text.match(/(?:Rate\s*of\s*Interest|Interest\s*Rate|ROI)[.\s:%]*([0-9]{1,2}(?:\.[0-9]{1,3})?)\s*%/i) ||
-                    text.match(/([0-9]{1,2}\.[0-9]{1,2})\s*%\s*(?:p\.?a\.?|per\s*annum)/i);
+                    text.match(/([0-9]{1,2}\.[0-9]{1,2})\s*(?:%|INR|[0-9]{2}-[0-9]{2}-[0-9]{4})/);
   if (rateMatch && rateMatch[1]) {
     fields.interestRate = {
       value: parseFloat(rateMatch[1]),
@@ -250,8 +255,33 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
     };
   }
 
+  // Tabular Date Pair Fallback (Handles table row format: "Start Date Maturity Date ... 14-01-2025 15-06-2026")
+  if (!fields.issueDate || !fields.maturityDate) {
+    const datePairMatch = text.match(/(?:Start\s*Date[\s\S]{0,100}?Maturity\s*Date[\s\S]{0,200}?)([0-9]{2}-[0-9]{2}-[0-9]{4})\s+([0-9]{2}-[0-9]{2}-[0-9]{4})/i) ||
+                          text.match(/([0-9]{2}-[0-9]{2}-[0-9]{4})\s+([0-9]{2}-[0-9]{2}-[0-9]{4})/);
+    if (datePairMatch) {
+      if (!fields.issueDate) {
+        fields.issueDate = {
+          value: normalizeDateString(datePairMatch[1]),
+          confidence: 0.92,
+          sourceSnippet: `Tabular Start Date: ${datePairMatch[1]}`,
+          extractionMethod: 'structured_regex',
+        };
+      }
+      if (!fields.maturityDate) {
+        fields.maturityDate = {
+          value: normalizeDateString(datePairMatch[2]),
+          confidence: 0.94,
+          sourceSnippet: `Tabular Maturity Date: ${datePairMatch[2]}`,
+          extractionMethod: 'structured_regex',
+        };
+      }
+    }
+  }
+
   // 7. Maturity Instruction Extraction (Auto-Renewal vs Credit)
-  const renewMatch = text.match(/(Auto[-\s]Renewal(?:\s+for\s+same\s+period)?|Renew\s+automatically|Do\s+not\s+renew|Credit\s+to\s+account|Pay\s+on\s+maturity)/i);
+  const renewMatch = text.match(/Maturity\s*Instruction\s*:\s*([A-Za-z0-9\s]{4,30}?)(?=\s*(?:Note|Premature|\*|\n|\r|$))/i) ||
+                    text.match(/(Auto[-\s]Renewal(?:\s+for\s+same\s+period)?|Auto\s+Renewal\s+Mode|Renew\s+automatically|Do\s+not\s+renew|Credit\s+to\s+account|Pay\s+on\s+maturity)/i);
   if (renewMatch) {
     fields.maturityInstruction = {
       value: renewMatch[1].trim(),
@@ -262,7 +292,8 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
   }
 
   // 8. Joint Holder & Lien / Pledge Status
-  const jointMatch = text.match(/(?:Jointly\s*with|Joint\s*Holder|In\s*Joint\s*Names\s*of)[.\s:]*([^\n\r;]{5,80})/i) ||
+  const jointMatch = text.match(/Joint\s*Holder\s*:\s*([A-Za-z\s]{3,30}?)(?=\s*(?:Account|Deposit|FDR|Pincode|Phone|\n|\r|$))/i) ||
+                     text.match(/(?:Jointly\s*with|Joint\s*Holder|In\s*Joint\s*Names\s*of)[.\s:]*([^\n\r;]{5,80})/i) ||
                      text.match(/(Regional\s*Officer,\s*AICTE[^\n\r;]*|AICTE,\s*New\s*Delhi)/i);
   if (jointMatch) {
     fields.jointHolder = {

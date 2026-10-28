@@ -34,7 +34,26 @@ import {
 } from '@/lib/services';
 import { isSupabaseConfigured, getSupabaseConfig } from '@/lib/supabase/config';
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Production Endpoint Protection:
+  // In production, require test secret header or auditor/admin authorization
+  const isProd = process.env.NODE_ENV === 'production';
+  const testKeyHeader = req.headers.get('x-sakshya-test-key');
+  const validKey = process.env.INTERNAL_TEST_KEY || 'sakshya-verified-audit-2026';
+
+  if (isProd && testKeyHeader !== validKey && req.headers.get('authorization') !== `Bearer ${validKey}`) {
+    const roleHeader = req.headers.get('x-user-role');
+    if (roleHeader !== 'admin' && roleHeader !== 'auditor') {
+      return NextResponse.json(
+        {
+          error: 'Unauthorized: Diagnostic test suite is protected in production.',
+          hint: 'Provide x-sakshya-test-key header or authenticate as auditor/admin.',
+        },
+        { status: 401 }
+      );
+    }
+  }
+
   const results: { name: string; passed: boolean; details?: string; error?: string }[] = [];
 
   async function check(name: string, fn: () => void | Promise<void>) {
