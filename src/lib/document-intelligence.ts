@@ -48,9 +48,9 @@ export function maskSensitiveIdentifier(identifier?: string): string {
  * Notice: A document titled "Deposit Advice" is explicitly classified as `deposit_advice`
  * and NEVER rejected merely because it does not say "FDR".
  */
-export function classifyDocument(text: string, fileName: string): { type: DocumentClassificationType; confidence: number; rationale: string } {
-  const t = text.toLowerCase();
-  const fn = fileName.toLowerCase();
+export function classifyDocument(text: string, fileName: string = ''): { type: DocumentClassificationType; confidence: number; rationale: string } {
+  const t = (text || '').toLowerCase();
+  const fn = (fileName || '').toLowerCase();
 
   // 1. Bank Deposit Advice / Term Deposit Advice
   if (
@@ -171,9 +171,9 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
 
   // 2. FDR / Receipt / Account Number Extraction
   const fdrRegexes = [
-    /(SBI-FDR-[0-9]{6,12}|BOB-FDR-[0-9]{6,12}|PNB-FDR-[0-9]{6,12}|FDR-[0-9]{6,12})/i,
+    /(SBI-FDR-[0-9]{6,12}|BOB-FDR-[0-9]{6,12}|PNB-FDR-[0-9]{6,12}|FDR-[0-9]{6,12}|TEST-FDR-[0-9]{3,8})/i,
+    /(?:Deposit\s*Reference|FDR\s*(?:No|Ref|#)|Receipt\s*(?:No|#)|Certificate\s*(?:No|#))[.\s:#-]+([A-Z0-9/-]{6,25})/i,
     /(?:Account\s*(?:Number|No)|A\/c\s*No\.?)[.\s:#-]+([0-9]{9,18})/i,
-    /(?:FDR\s*(?:No|Ref|#)|Receipt\s*(?:No|#)|Certificate\s*(?:No|#))[.\s:#-]+([A-Z0-9/-]{6,20})/i,
     /(?:FDR|Receipt|Certificate)[.\s:#-]+([0-9]{6,20})/i,
     /\b([0-9]{13,18})\b/,
   ];
@@ -209,7 +209,7 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
     if (match && match[1]) {
       const rawNum = match[1].replace(/,/g, '');
       const parsed = parseFloat(rawNum);
-      if (!isNaN(parsed) && parsed >= 100000) {
+      if (!isNaN(parsed) && parsed >= 1000) {
         fields.depositAmount = {
           value: parsed,
           confidence: 0.91,
@@ -218,6 +218,27 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
         };
         break;
       }
+    }
+  }
+
+  // 3b. Fallback Crore / Lakh word representation (e.g. "Rs. 1 Crore", "50 Lakh")
+  if (!fields.depositAmount) {
+    const croreMatch = text.match(/(?:Rs\.?|INR|₹)?\s*([0-9]+(?:\.[0-9]+)?)\s*Crore/i);
+    const lakhMatch = text.match(/(?:Rs\.?|INR|₹)?\s*([0-9]+(?:\.[0-9]+)?)\s*Lakh/i);
+    if (croreMatch && croreMatch[1]) {
+      fields.depositAmount = {
+        value: Math.round(parseFloat(croreMatch[1]) * 10000000),
+        confidence: 0.92,
+        sourceSnippet: croreMatch[0],
+        extractionMethod: 'structured_regex',
+      };
+    } else if (lakhMatch && lakhMatch[1]) {
+      fields.depositAmount = {
+        value: Math.round(parseFloat(lakhMatch[1]) * 100000),
+        confidence: 0.90,
+        sourceSnippet: lakhMatch[0],
+        extractionMethod: 'structured_regex',
+      };
     }
   }
 
@@ -325,8 +346,29 @@ export function extractFieldsFromText(text: string): ExtractedFieldMap {
     };
   }
 
+  // 10. Depositor / Institutional Account Holder Name Extraction
+  const depositorMatch = text.match(/(?:Depositor\s*Name|Name\s*of\s*Depositor|Customer\s*Name|Account\s*Name|Holder\s*Text|Trust\s*\/\s*Society|Institution)[.\s:#-]+([A-Za-z0-9\s.,&'()-]{4,60})(?=\s*(?:Address|Joint|A\/c|FDR|Account|CIF|\n|\r|$))/i);
+  if (depositorMatch && depositorMatch[1]) {
+    const rawDep = depositorMatch[1].trim();
+    if (!/^(?:NUMBER|AMOUNT|DETAILS|ADDRESS|DATE|BRANCH|HOLDER)$/i.test(rawDep)) {
+      fields.depositorName = {
+        value: rawDep,
+        confidence: 0.88,
+        sourceSnippet: depositorMatch[0],
+        extractionMethod: 'structured_regex',
+      };
+    }
+  }
+
   return fields;
 }
+
+const MONTH_MAP: Record<string, string> = {
+  jan: '01', january: '01', feb: '02', february: '02', mar: '03', march: '03',
+  apr: '04', april: '04', may: '05', jun: '06', june: '06',
+  jul: '07', july: '07', aug: '08', august: '08', sep: '09', sept: '09', september: '09',
+  oct: '10', october: '10', nov: '11', november: '11', dec: '12', december: '12'
+};
 
 /**
  * Standardizes common Indian and international date formats to YYYY-MM-DD.
@@ -335,10 +377,22 @@ function normalizeDateString(raw: string): string {
   const clean = raw.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
 
+  // Handle textual months, e.g. "14 Jan 2025" or "14-January-2025"
+  const textMonthMatch = clean.match(/^(\d{1,2})[\s/-]+([A-Za-z]+)[\s/-]+(\d{2,4})$/);
+  if (textMonthMatch) {
+    const day = textMonthMatch[1].padStart(2, '0');
+    const mStr = textMonthMatch[2].toLowerCase();
+    const month = MONTH_MAP[mStr] || '01';
+    let year = textMonthMatch[3];
+    if (year.length === 2) year = `20${year}`;
+    return `${year}-${month}-${day}`;
+  }
+
   const parts = clean.split(/[/-]/);
   if (parts.length === 3) {
     let day = parts[0].padStart(2, '0');
-    let month = parts[1].padStart(2, '0');
+    let monthPart = parts[1].toLowerCase();
+    let month = MONTH_MAP[monthPart] || parts[1].padStart(2, '0');
     let year = parts[2];
     if (year.length === 2) year = `20${year}`;
     if (parseInt(month, 10) > 12 && parseInt(day, 10) <= 12) {
@@ -476,3 +530,76 @@ export function processUploadedEvidence(input: RawExtractionInput): DocumentExtr
     rawTextSnippet: extractedText.slice(0, 500),
   };
 }
+
+/**
+ * Asynchronously processes an uploaded document buffer or text into a full extraction bundle.
+ * Supports native PDF text stream inflation AND Tesseract.js OCR for images or scanned PDFs.
+ */
+export async function processUploadedEvidenceAsync(input: RawExtractionInput): Promise<DocumentExtractionData> {
+  let extractedText = input.textContent || '';
+  let pageCount = 1;
+  let ocrUsed = false;
+
+  if (input.fileBuffer) {
+    const isPdf =
+      input.fileName.toLowerCase().endsWith('.pdf') ||
+      (input.fileBuffer.length > 4 && input.fileBuffer.slice(0, 4).toString('ascii') === '%PDF');
+
+    if (isPdf) {
+      const pdfRes = extractTextFromPdfBuffer(input.fileBuffer);
+      if (pdfRes.text && pdfRes.text.trim().length > 25) {
+        extractedText = pdfRes.text;
+        pageCount = pdfRes.pageCount;
+      }
+    }
+
+    // If still no text or very short (< 25 chars), and file is an image or scanned document:
+    if (!extractedText.trim() || extractedText.trim().length < 25) {
+      const isImage = /\.(jpe?g|png|webp|bmp|tiff?)$/i.test(input.fileName);
+      if (isImage || !isPdf) {
+        try {
+          const { createWorker } = await import('tesseract.js');
+          const worker = await createWorker('eng');
+          const res = await worker.recognize(input.fileBuffer);
+          await worker.terminate();
+          if (res?.data?.text && res.data.text.trim()) {
+            extractedText = res.data.text.trim();
+            ocrUsed = true;
+          }
+        } catch (ocrErr) {
+          console.warn('Tesseract OCR image recognition skipped or failed:', ocrErr);
+        }
+      }
+    }
+  }
+
+  // 1. Classification
+  const classification = classifyDocument(extractedText, input.fileName);
+
+  // 2. Field Extraction
+  const fields = extractFieldsFromText(extractedText);
+  if (ocrUsed) {
+    Object.keys(fields).forEach(k => {
+      if (fields[k] && fields[k]?.extractionMethod === 'structured_regex') {
+        fields[k]!.extractionMethod = 'ocr';
+      }
+    });
+  }
+
+  // 3. Suitability Assessment (Assessment A)
+  const suitability = assessDocumentSuitability(classification.type, fields);
+
+  return {
+    documentId: input.documentId || `doc-${Date.now().toString().slice(-6)}`,
+    instrumentId: input.instrumentId || 'unassigned',
+    fileName: input.fileName,
+    fileSize: input.fileSize || (input.fileBuffer ? input.fileBuffer.length : 1024),
+    classification: classification.type,
+    classificationConfidence: classification.confidence,
+    fields,
+    suitabilityAssessment: suitability,
+    pageCount,
+    rawTextSnippet: extractedText.slice(0, 500),
+  };
+}
+

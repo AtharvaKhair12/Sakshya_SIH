@@ -108,6 +108,7 @@ export interface UploadedDocument {
   uploadedAt: string;
   // For demo: base64 data url or blob reference
   dataUrl?: string;
+  extractedData?: DocumentExtractionData;
 }
 
 export const DOCUMENT_TYPE_LABELS: Record<UploadedDocument['documentType'], string> = {
@@ -537,7 +538,7 @@ export interface ExtractedFieldItem {
   confidence: number;
   page?: number;
   sourceSnippet?: string;
-  extractionMethod: 'pdf_text_parser' | 'structured_regex' | 'heuristic' | 'manual_override';
+  extractionMethod: 'pdf_text_parser' | 'structured_regex' | 'heuristic' | 'manual_override' | 'ocr';
   isMasked?: boolean;
   maskedValue?: string;
 }

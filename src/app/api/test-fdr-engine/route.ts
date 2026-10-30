@@ -41,6 +41,7 @@ import {
   assessInstrumentAuthenticity,
   processUploadedEvidence,
 } from '@/lib/document-intelligence';
+import { checkCredentialsAgainstExtraction } from '@/lib/credential-checker';
 import {
   reconcileInstrumentEvidence,
   ReconciliationFindingItem,
@@ -745,6 +746,143 @@ export async function GET(req: Request) {
     }
     if (!extraction.suitabilityAssessment.rationale.includes('operational manual-review check')) {
       throw new Error(`Expected operational manual-review check in rationale, got: ${extraction.suitabilityAssessment.rationale}`);
+    }
+  });
+
+  recordTest('Document Intelligence', 'DOC-04', 'Credential checker validates exact matches and flags discrepancies', () => {
+    const mockExtraction = {
+      documentId: 'doc-test-1',
+      instrumentId: 'inst-1',
+      fileName: 'FDR_Certificate.pdf',
+      fileSize: 2048,
+      classification: 'fdr_certificate' as const,
+      classificationConfidence: 0.95,
+      fields: {
+        fdrNumber: { value: 'SBI-FDR-9928172', confidence: 0.95, extractionMethod: 'structured_regex' as const },
+        bankName: { value: 'State Bank of India', confidence: 0.95, extractionMethod: 'structured_regex' as const },
+        depositAmount: { value: 2500000, confidence: 0.95, extractionMethod: 'structured_regex' as const },
+        issueDate: { value: '2024-04-15', confidence: 0.95, extractionMethod: 'structured_regex' as const },
+        maturityDate: { value: '2029-04-15', confidence: 0.95, extractionMethod: 'structured_regex' as const },
+      },
+      suitabilityAssessment: {
+        status: 'suitable' as const,
+        documentCategory: 'fdr_certificate' as const,
+        meetsChecklistCriteria: true,
+        rationale: 'Valid FDR',
+        distinctionNote: 'Note',
+      },
+      rawTextSnippet: 'State Bank of India FDR SBI-FDR-9928172 Amount 2500000',
+    };
+
+    // Test 1: Exact matching credentials
+    const matchResult = checkCredentialsAgainstExtraction({
+      fdrNumber: 'SBI-FDR-9928172',
+      bankName: 'State Bank of India',
+      depositAmount: 2500000,
+      issueDate: '2024-04-15',
+      maturityDate: '2029-04-15',
+    }, mockExtraction);
+
+    if (!matchResult.overallMatch) throw new Error('Expected overallMatch to be true for identical credentials');
+    if (matchResult.hasDiscrepancies) throw new Error('Expected hasDiscrepancies to be false');
+    if (matchResult.matchesCount < 4) throw new Error(`Expected at least 4 matches, got ${matchResult.matchesCount}`);
+
+    // Test 2: Discrepancy detection (different amount and fdrNumber)
+    const mismatchResult = checkCredentialsAgainstExtraction({
+      fdrNumber: 'PNB-FDR-1111111',
+      bankName: 'State Bank of India',
+      depositAmount: 1000000, // Differs from 2500000
+      issueDate: '2024-04-15',
+      maturityDate: '2029-04-15',
+    }, mockExtraction);
+
+    if (mismatchResult.overallMatch) throw new Error('Expected overallMatch to be false for conflicting credentials');
+    if (!mismatchResult.hasDiscrepancies) throw new Error('Expected hasDiscrepancies to be true');
+    if (mismatchResult.mismatchesCount < 2) throw new Error(`Expected at least 2 mismatches, got ${mismatchResult.mismatchesCount}`);
+
+    const fdrCheck = mismatchResult.checks.find(c => c.key === 'fdrNumber');
+    if (!fdrCheck || fdrCheck.status !== 'mismatch') throw new Error('Expected fdrNumber check to be mismatch');
+    if (!fdrCheck.canAdopt || fdrCheck.adoptValue !== 'SBI-FDR-9928172') throw new Error('Expected canAdopt with value SBI-FDR-9928172');
+
+    const amtCheck = mismatchResult.checks.find(c => c.key === 'depositAmount');
+    if (!amtCheck || amtCheck.status !== 'mismatch') throw new Error('Expected depositAmount check to be mismatch');
+    if (!amtCheck.canAdopt || amtCheck.adoptValue !== 2500000) throw new Error('Expected canAdopt with value 2500000');
+  });
+
+  recordTest('Document Intelligence', 'DOC-05', 'Credential checker cross-checks real Axis Bank deposit advice against entered registration parameters', () => {
+    const userHome = process.env.USERPROFILE || 'C:\\Users\\Atharva';
+    const realPdfPath = path.join(userHome, 'Downloads', 'ad_xxxx-xxxx-xxx-3323_FD_ADVICE - Rs. 1 Crore.pdf');
+    if (!fs.existsSync(realPdfPath)) return;
+
+    const realBuf = fs.readFileSync(realPdfPath);
+    const extraction = processUploadedEvidence({
+      fileName: 'FD_ADVICE - Rs. 1 Crore.pdf',
+      fileBuffer: realBuf,
+    });
+
+    // Cross-check with matching entered values
+    const result = checkCredentialsAgainstExtraction({
+      bankName: 'Axis Bank',
+      depositAmount: 10000000,
+      issueDate: '2025-01-14',
+      maturityDate: '2026-06-15',
+      fdrNumber: '924030045673323',
+    }, extraction);
+
+    const bankCheck = result.checks.find(c => c.key === 'bankName');
+    if (!bankCheck || bankCheck.status !== 'match') throw new Error(`Expected bank match, got ${bankCheck?.status}`);
+
+    const amtCheck = result.checks.find(c => c.key === 'depositAmount');
+    if (!amtCheck || amtCheck.status !== 'match') throw new Error(`Expected amount match, got ${amtCheck?.status}`);
+
+    const issueCheck = result.checks.find(c => c.key === 'issueDate');
+    if (!issueCheck || issueCheck.status !== 'match') throw new Error(`Expected issue date match, got ${issueCheck?.status}`);
+
+    const matCheck = result.checks.find(c => c.key === 'maturityDate');
+    if (!matCheck || matCheck.status !== 'match') throw new Error(`Expected maturity date match, got ${matCheck?.status}`);
+  });
+
+  recordTest('Document Intelligence', 'DOC-06', 'ASCII85/FlateDecode PDF stream inflation extracts intentional conflict fixture and flags discrepancies', () => {
+    const userHome = process.env.USERPROFILE || 'C:\\Users\\Atharva';
+    const conflictPdfPath = path.join(userHome, 'Downloads', 'TEST_FDR_002_CONFLICT.pdf');
+    if (!fs.existsSync(conflictPdfPath)) return;
+
+    const conflictBuf = fs.readFileSync(conflictPdfPath);
+    const extraction = processUploadedEvidence({
+      fileName: 'TEST_FDR_002_CONFLICT.pdf',
+      fileBuffer: conflictBuf,
+    });
+
+    if (extraction.fields.fdrNumber?.value !== 'TEST-FDR-002') {
+      throw new Error(`Expected TEST-FDR-002, got ${extraction.fields.fdrNumber?.value}`);
+    }
+    if (extraction.fields.depositAmount?.value !== 2000000) {
+      throw new Error(`Expected 2000000, got ${extraction.fields.depositAmount?.value}`);
+    }
+    if (extraction.fields.maturityDate?.value !== '2028-09-30') {
+      throw new Error(`Expected 2028-09-30, got ${extraction.fields.maturityDate?.value}`);
+    }
+
+    // Run test scenario specified in fixture: entered 25,00,000 and 2030-09-30
+    const conflictCheck = checkCredentialsAgainstExtraction({
+      bankName: 'Other',
+      customBank: 'Demo Training Bank',
+      fdrNumber: 'TEST-FDR-002',
+      depositAmount: 2500000,
+      issueDate: '2025-09-30',
+      maturityDate: '2030-09-30',
+    }, extraction);
+
+    if (!conflictCheck.hasDiscrepancies) {
+      throw new Error('Expected hasDiscrepancies to be true for intentional conflict PDF');
+    }
+    const amtCheck = conflictCheck.checks.find(c => c.key === 'depositAmount');
+    if (!amtCheck || amtCheck.status !== 'mismatch') {
+      throw new Error('Expected depositAmount mismatch to be flagged');
+    }
+    const matCheck = conflictCheck.checks.find(c => c.key === 'maturityDate');
+    if (!matCheck || matCheck.status !== 'mismatch') {
+      throw new Error('Expected maturityDate mismatch to be flagged');
     }
   });
 

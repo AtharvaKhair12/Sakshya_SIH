@@ -109,14 +109,63 @@ function extractTextFromContentStream(streamContent: string): string {
 }
 
 /**
+ * Decodes Adobe ASCII85 (btoa) encoded stream data.
+ */
+export function decodeAscii85(input: string | Buffer): Buffer {
+  let str = typeof input === 'string' ? input : input.toString('binary');
+  const startIdx = str.indexOf('<~');
+  if (startIdx !== -1) str = str.slice(startIdx + 2);
+  const endIdx = str.indexOf('~>');
+  if (endIdx !== -1) str = str.slice(0, endIdx);
+
+  str = str.replace(/\s+/g, '');
+  const out: number[] = [];
+  let tuple = 0;
+  let count = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (c === 'z' && count === 0) {
+      out.push(0, 0, 0, 0);
+      continue;
+    }
+    const code = c.charCodeAt(0);
+    if (code >= 33 && code <= 117) {
+      tuple = tuple * 85 + (code - 33);
+      count++;
+      if (count === 5) {
+        out.push(
+          (tuple >>> 24) & 0xff,
+          (tuple >>> 16) & 0xff,
+          (tuple >>> 8) & 0xff,
+          tuple & 0xff
+        );
+        tuple = 0;
+        count = 0;
+      }
+    }
+  }
+
+  if (count > 1) {
+    for (let i = count; i < 5; i++) {
+      tuple = tuple * 85 + 84;
+    }
+    for (let i = 0; i < count - 1; i++) {
+      out.push((tuple >>> (24 - i * 8)) & 0xff);
+    }
+  }
+
+  return Buffer.from(out);
+}
+
+/**
  * Extracts text and metadata from a PDF buffer natively.
  */
 export function extractTextFromPdfBuffer(pdfBuffer: Buffer): PdfExtractionResult {
   try {
     const bufferStr = pdfBuffer.toString('binary');
     const pages: string[] = [];
-    const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
-    const filterRegex = /<<[\s\S]*?\/Filter\s*\/FlateDecode[\s\S]*?>>/g;
+    const streamRegex = /stream[\r\n]+([\s\S]*?)(?:\r?\n)?endstream/g;
 
     let match: RegExpExecArray | null;
     let streamIndex = 0;
@@ -126,29 +175,37 @@ export function extractTextFromPdfBuffer(pdfBuffer: Buffer): PdfExtractionResult
     while ((match = streamRegex.exec(bufferStr)) !== null) {
       const rawStream = match[1];
       const streamStart = match.index;
-      const precedingChunk = bufferStr.slice(Math.max(0, streamStart - 300), streamStart);
+      const precedingChunk = bufferStr.slice(Math.max(0, streamStart - 350), streamStart);
 
+      const isAscii85 = precedingChunk.includes('/ASCII85Decode');
       const isFlate = precedingChunk.includes('/FlateDecode');
       let streamText = '';
 
+      let rawBytes: Buffer = Buffer.from(rawStream, 'binary') as any;
+      if (isAscii85) {
+        try {
+          rawBytes = decodeAscii85(rawBytes) as any;
+        } catch {
+          // Fall back to raw stream bytes if ascii85 decode errors
+        }
+      }
+
       if (isFlate) {
         try {
-          const rawBuffer = Buffer.from(rawStream, 'binary');
-          const decompressed = zlib.inflateSync(rawBuffer);
+          const decompressed = zlib.inflateSync(rawBytes);
           streamText = extractTextFromContentStream(decompressed.toString('utf-8'));
         } catch {
           // If pure inflate fails (e.g. raw deflate without zlib header)
           try {
-            const rawBuffer = Buffer.from(rawStream, 'binary');
-            const decompressed = zlib.inflateRawSync(rawBuffer);
+            const decompressed = zlib.inflateRawSync(rawBytes);
             streamText = extractTextFromContentStream(decompressed.toString('utf-8'));
           } catch {
             // Fallback to text inside raw stream
-            streamText = extractTextFromContentStream(rawStream);
+            streamText = extractTextFromContentStream(rawBytes.toString('utf-8'));
           }
         }
       } else {
-        streamText = extractTextFromContentStream(rawStream);
+        streamText = extractTextFromContentStream(rawBytes.toString('utf-8'));
       }
 
       if (streamText.trim()) {
